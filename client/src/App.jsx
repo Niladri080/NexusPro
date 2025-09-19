@@ -1,9 +1,9 @@
 import {
+  RedirectToSignIn,
   SignIn,
   SignUp,
   SignedIn,
   SignedOut,
-  UserButton,
 } from "@clerk/clerk-react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage";
@@ -12,29 +12,64 @@ import AboutUsPage from "./Pages/AboutUsPage";
 import ContactUsPage from "./Pages/ContactUsPage";
 import { Bounce, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Dashboard from "./Pages/Dashboard";
+import ProtectedRoute from "./Components/ProtectedRoute";
 function App() {
   return (
     <>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/about-us" element={<AboutUsPage />} />
           <Route path="/contact-us" element={<ContactUsPage />} />
           <Route
             path="/sign-in/*"
-            element={<SignIn routing="path" path="/sign-in" />}
+            element={
+              <div
+                style={{
+                  minHeight: "100vh",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <SignIn
+                  routing="path"
+                  path="/sign-in"
+                  afterSignInUrl="/dashboard"
+                />
+              </div>
+            }
           />
+
           <Route
             path="/sign-up/*"
-            element={<SignUp routing="path" path="/sign-up" />}
+            element={
+              <div
+                style={{
+                  minHeight: "100vh",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <SignUp
+                  routing="path"
+                  path="/sign-up"
+                  afterSignUpUrl="/dashboard"
+                  redirectUrl="/dashboard" 
+                />
+              </div>
+            }
           />
-          {/* <Route path='/' element={
-          <>
-          <SignedOut>
-            <RedirectToSignIn/>
-          </SignedOut>
-          </>
-        }/> */}
         </Routes>
       </BrowserRouter>
       <ToastContainer

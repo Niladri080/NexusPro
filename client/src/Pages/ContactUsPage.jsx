@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Star,
-  Search,
-  Twitter,
-  Linkedin,
-  Facebook,
   Mail,
   Phone,
   MapPin,
@@ -22,8 +18,9 @@ import {
 } from "lucide-react";
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
-import axios from 'axios';
+import axios from "axios";
 import { toast } from "react-toastify";
+import Loader from "../Components/Loader";
 // Sparkle component matching the original theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -133,6 +130,7 @@ const SupportOption = ({
 );
 
 const ContactUsPage = () => {
+  const [loading, setloading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -152,28 +150,32 @@ const ContactUsPage = () => {
   };
 
   const handleSubmit = (e) => {
+    setloading(true);
     e.preventDefault();
-    axios.post("http://localhost:4000/sendEmail",formData,{
-      headers:{
-        'Content-Type':'application/json'
-      }
-    })
-    .then((res)=>{
-      toast.success(res.data.message);
-      setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000);
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        subject: "",
-        message: "",
+    axios
+      .post("http://localhost:4000/sendEmail", formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      .then((res) => {
+        setloading(false);
+        toast.success(res.data.message);
+        setIsSubmitted(true);
+        setTimeout(() => setIsSubmitted(false), 3000);
+        setFormData({
+          name: "",
+          email: "",
+          company: "",
+          subject: "",
+          message: "",
+        });
+      })
+      .catch((err) => {
+        setloading(false);
+        toast.error("Something went wrong.Try again later");
+        console.log(err);
       });
-    })
-    .catch(err=>{
-      toast.error("Something went wrong.Try again later")
-      console.log(err);
-    })
   };
 
   const toggleFAQ = (index) => {
@@ -288,7 +290,7 @@ const ContactUsPage = () => {
 
       <div className="relative z-10 container mx-auto px-6 lg:px-8 py-6">
         {/* Header Navigation */}
-        <Header/>
+        <Header />
         {/* Hero Section */}
         <section className="text-center py-20 lg:py-32 relative mb-20">
           {/* Orbital Glow Effect */}
@@ -394,7 +396,7 @@ const ContactUsPage = () => {
 
                 <div className="relative">
                   <MessageSquare
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    className="absolute left-3 top-4 text-gray-500"
                     size={20}
                   />
                   <textarea
@@ -405,12 +407,20 @@ const ContactUsPage = () => {
                     className="w-full pl-12 pr-4 py-4 bg-gray-800/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors duration-300 resize-none h-32"
                   ></textarea>
                 </div>
-
                 <button
                   onClick={handleSubmit}
+                  disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
                 >
-                  Send Message <Send size={18} />
+                  {loading ? (
+                    <>
+                     <Loader/>
+                    </>
+                  ) : (
+                    <>
+                      Send Message <Send size={18} />
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -501,7 +511,7 @@ const ContactUsPage = () => {
         </section>
       </div>
       {/* Footer */}
-      <Footer/>
+      <Footer />
       {/* Custom Styles */}
       <style jsx>{`
         @keyframes sparkle {
