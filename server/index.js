@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import PreLoginRouter from './Router/PreLoginRouter.js'
 import PostLoginRouter from './Router/PostLoginRouter.js'
 import dotenv from "dotenv"
+import { connectDB } from './Config/db.js'
 dotenv.config();
 const app=express()
 app.use(express.json())
@@ -16,6 +17,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 )
+await connectDB();
 app.use(express.urlencoded({extended:true}))
 app.use("/",PreLoginRouter);
 app.use("/api/home",PostLoginRouter);

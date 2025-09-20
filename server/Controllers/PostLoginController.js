@@ -1,5 +1,7 @@
+import { Clerk } from "@clerk/clerk-sdk-node";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import { Roadmap } from "../Models/RoadmapModel.js";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let cachedTip = null;
@@ -63,7 +65,7 @@ Ensure the entire output is a single, valid JSON array and nothing else. Do not 
 `;
     const result = await model.generateContent(suggestionsPrompt);
     const suggestions = result.response.candidates[0].content.parts[0].text;
-    console.log(suggestions)
+    console.log(suggestions);
     cachedSuggestions = suggestions;
     suggestionsCacheTime = now;
     res.status(200).json({ success: true, message: suggestions });
@@ -99,3 +101,63 @@ export const currentAffairs = async (req, res) => {
       .json({ message: "No current affairs available at the moment." });
   }
 };
+export const RoadmapGen = async (req, res) => {
+  try {
+    const { description } = req.body;
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `You are an expert career advisor. Your task is to create a detailed, step-by-step learning roadmap based on the user's desired career path. The output MUST be a valid JSON object that strictly follows the provided schema.
+
+The JSON object must contain two top-level keys: role and roadmap.
+
+The role key's value should be a concise, lowercase, hyphenated string representing the career path (e.g., "software-engineer", "frontend-developer").
+
+The roadmap key's value should be an array of step objects.
+
+Each step object in the roadmap array must contain the following five properties:
+
+id: A unique sequential integer for the step, starting from 1.
+
+title: A concise string for the step's title.
+
+description: A short string explaining what the step involves.
+
+duration: A string estimating the time to complete the step (e.g., "4-6 weeks").
+
+completed: A boolean value, which must always be false.
+
+Here is the user's career goal: ${description}`;
+    const result = await model.generateContent(prompt);
+    res
+      .status(200)
+      .json({ message: result.response.candidates[0].content.parts[0].text });
+  } catch (err) {
+    console.log(err);
+    res.status(500);
+  }
+};
+export const SaveRoadmap = async (req, res) => {
+  try {
+    const { role, roadmap, user } = req.body;
+    const newData = new Roadmap({
+      userId: user.id,
+      role: role,
+      roadmap: roadmap,
+    });
+    await newData.save();
+    res.status(200).json({success:true})
+  } catch (err) {
+    console.log(err.message);
+  }
+};
+export const fetchRoadmap=async (req,res)=>{
+  try{
+    const {userId}=req.body;
+    console.log(userId);
+    const results=await Roadmap.findOne({userId:userId});
+    res.status(200).json({roadmap:results.roadmap});
+  }
+  catch (err) {
+    res.status(500)
+    console.log(err.message);
+}
+}

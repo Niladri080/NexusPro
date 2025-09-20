@@ -16,6 +16,8 @@ import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import MyLearningPage from "./Pages/MyLearningPage";
 import ResumePage from "./Pages/ResumePage";
+import RoadmapPage from "./Pages/RoadmapPage";
+import ResourcesPage from "./Pages/ResourcesPage";
 function App() {
   return (
     <>
@@ -43,6 +45,23 @@ function App() {
             element={
               <ProtectedRoute>
                 <ResumePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/generate-roadmap"
+            element={
+              <ProtectedRoute>
+                <RoadmapPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/resources"
+            element={
+              <ProtectedRoute>
+                <ResourcesPage />
               </ProtectedRoute>
             }
           />

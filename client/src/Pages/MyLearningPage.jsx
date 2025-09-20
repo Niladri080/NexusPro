@@ -22,9 +22,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
-
+import { useUser } from "@clerk/clerk-react";
+import Cookies from 'js-cookie'
 const MyLearningPage = () => {
-  const navigate = useNavigate();
+  const {user}=useUser()
+  const role=Cookies.get("goal") || "";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
 
@@ -105,19 +107,6 @@ const MyLearningPage = () => {
     },
   ];
 
-  const NavigationItem = ({ icon: Icon, label, active = false, onClick }) => (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-4 px-6 py-4 rounded-xl cursor-pointer transition-all duration-300 ${
-        active
-          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-          : "text-gray-400 hover:text-white hover:bg-gray-800/50"
-      }`}
-    >
-      <Icon size={22} />
-      <span className="font-medium">{label}</span>
-    </div>
-  );
 
   const CircularProgress = ({ progress, size = 100 }) => {
     const radius = (size - 8) / 2;
@@ -196,13 +185,13 @@ const MyLearningPage = () => {
           <div className="bg-white/5 border border-blue-400/10 shadow-xl rounded-2xl px-10 py-10 max-w-2xl w-full text-center backdrop-blur-2xl">
             <h1 className="text-4xl lg:text-5xl font-extrabold mb-4 text-white flex items-center justify-center gap-3">
               Welcome back,{" "}
-              <span className="text-blue-400">{userData.name}</span>!{" "}
+              <span className="text-blue-400">{user?.fullName || "Learner"}</span>!{" "}
               <span>👋</span>
             </h1>
             <p className="text-blue-200 text-lg font-medium">
               Continue your journey to become an{" "}
               <span className="font-semibold text-white">
-                {userData.chosenCareerPath}
+               {role?role:"Successfull Person"}
               </span>
             </p>
           </div>
@@ -215,7 +204,7 @@ const MyLearningPage = () => {
             <div className="inline-flex items-center gap-3 bg-blue-600/20 px-6 py-3 rounded-full border border-blue-500/30">
               <Award className="text-blue-400" size={24} />
               <span className="text-xl font-semibold">
-                Your Chosen Path: {userData.chosenCareerPath}
+                 {role?"Your Chosen Path: "+role:"You have not choosen a path"}
               </span>
             </div>
           </div>

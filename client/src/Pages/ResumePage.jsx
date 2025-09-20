@@ -55,20 +55,6 @@ const ResumePage = () => {
     contentScore: 80,
   };
 
-  const NavigationItem = ({ icon: Icon, label, active = false, onClick }) => (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-4 px-6 py-4 rounded-xl cursor-pointer transition-all duration-300 ${
-        active
-          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-          : "text-gray-400 hover:text-white hover:bg-gray-800/50"
-      }`}
-    >
-      <Icon size={22} />
-      <span className="font-medium">{label}</span>
-    </div>
-  );
-
   const CircularProgress = ({ progress, size = 120, strokeWidth = 8 }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;

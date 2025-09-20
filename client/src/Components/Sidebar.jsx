@@ -1,5 +1,5 @@
 import React from "react";
-import { Home, Brain, MapPin, FileText, BookOpen, X } from "lucide-react";
+import { Home, Brain, MapPin, FileText, BookOpen, X, ArrowLeft, ArrowBigDownDashIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const NavigationItem = ({ icon: Icon, label, active = false, onClick }) => (
@@ -23,7 +23,7 @@ const Sidebar = ({ setSidebarOpen, sidebarOpen }) => {
   return (
     <>
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/5 border-r border-blue-400/10 backdrop-blur-2xl shadow-lg shadow-blue-500/10 transform transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/5 border-r border-blue-400/10 backdrop-blur-2xl shadow-lg shadow-blue-500/10 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -36,13 +36,7 @@ const Sidebar = ({ setSidebarOpen, sidebarOpen }) => {
             <X size={24} />
           </button>
         </div>
-        <nav className="p-6 space-y-3">
-          <NavigationItem
-            onClick={() => navigate("/dashboard")}
-            icon={Home}
-            label="Dashboard"
-            active={location.pathname === "/dashboard"}
-          />
+        <nav className="p-6 space-y-3 flex-1 flex flex-col">
           <NavigationItem
             onClick={() => navigate("/my-learning")}
             icon={Brain}
@@ -50,10 +44,10 @@ const Sidebar = ({ setSidebarOpen, sidebarOpen }) => {
             active={location.pathname === "/my-learning"}
           />
           <NavigationItem
-            onClick={() => navigate("/roadmap")}
+            onClick={() => navigate("/generate-roadmap")}
             icon={MapPin}
             label="Roadmap"
-            active={location.pathname === "/roadmap"}
+            active={location.pathname === "/generate-roadmap"}
           />
           <NavigationItem
             onClick={() => navigate("/resume-upload")}
@@ -68,6 +62,21 @@ const Sidebar = ({ setSidebarOpen, sidebarOpen }) => {
             active={location.pathname === "/resources"}
           />
         </nav>
+        <div className="p-6 border-t border-blue-400/10 mt-auto">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all duration-300
+              ${
+                location.pathname === "/dashboard"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                  : "bg-blue-500/10 text-blue-400 hover:bg-blue-600/20 hover:text-white"
+              }
+            `}
+          >
+            <ArrowLeft size={22} />
+            Return to dashboard
+          </button>
+        </div>
       </div>
       {sidebarOpen && (
         <div
