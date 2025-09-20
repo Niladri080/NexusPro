@@ -14,6 +14,8 @@ import { Bounce, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import MyLearningPage from "./Pages/MyLearningPage";
+import ResumePage from "./Pages/ResumePage";
 function App() {
   return (
     <>
@@ -25,6 +27,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-learning"
+            element={
+              <ProtectedRoute>
+                <MyLearningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resume-upload"
+            element={
+              <ProtectedRoute>
+                <ResumePage />
               </ProtectedRoute>
             }
           />

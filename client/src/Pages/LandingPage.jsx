@@ -1,12 +1,17 @@
+import React, { useRef } from "react";
+import {
+  FaCommentDots,
+  FaShieldAlt,
+  FaQuoteLeft,
 
-import { FaCommentDots, FaShieldAlt, FaQuoteLeft } from "react-icons/fa";
+} from "react-icons/fa";
 import CTASection from "../Components/CTAsection";
 import Header from "../Components/Header";
 import HeroSection from "../Components/HeroSection";
 import How from "../Components/HowItWorks";
 import Features from "../Components/Features";
 import Footer from "../Components/Footer";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 
@@ -20,18 +25,21 @@ const JobSuggestion = ({ title, company }) => (
   </div>
 );
 const LandingPage = () => {
-  const navigate = useNavigate();
-  const { isLoaded, isSignedIn } = useAuth();
-  const featuresRef = useRef(null);
-  const howRef = useRef(null);
-  const handleFeaturesClick = (e) => {
+  const navigate=useNavigate();
+  const {isSignedIn}=useAuth();
+  if (isSignedIn){
+    navigate("/dashboard");
+  }
+  const featuresRef=useRef(null);
+  const howRef=useRef(null);
+  const handleFeaturesClick=(e)=>{
     e.preventDefault();
-    featuresRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-  const handleHowClick = (e) => {
+     featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+  const handleHowClick=(e)=>{
     e.preventDefault();
-    howRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+    howRef.current?.scrollIntoView({behavior:'smooth'})
+  }
   return (
     <div className="bg-[#0a0a0c] text-white font-sans overflow-hidden relative">
       <div
@@ -45,10 +53,10 @@ const LandingPage = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none z-0"></div>
 
       <div className="relative z-10 container mx-auto px-6 lg:px-8 py-6">
-        <Header handleFeaturesClick={handleFeaturesClick} />
+        <Header handleFeaturesClick={handleFeaturesClick}/>
         <HeroSection />
-        <How ref={howRef} />
-        <Features ref={featuresRef} />
+        <How ref={howRef}/>
+        <Features ref={featuresRef}/>
         <section className="grid lg:grid-cols-2 gap-16 py-16 items-start">
           <div>
             <div className="flex items-center gap-3 mb-8">
@@ -103,10 +111,7 @@ const LandingPage = () => {
         </section>
       </div>
       <CTASection />
-      <Footer
-        handleFeaturesClick={handleFeaturesClick}
-        handleHowClick={handleHowClick}
-      />
+      <Footer handleFeaturesClick={handleFeaturesClick} handleHowClick={handleHowClick}/>
       <style jsx>{`
         /* Include the same animation keyframes as before, or move them to tailwind.config.js */
         @keyframes pulse-slow {

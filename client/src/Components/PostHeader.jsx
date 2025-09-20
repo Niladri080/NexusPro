@@ -51,12 +51,12 @@ const PostHeader = () => {
           Jobs
         </a>
         <a
-          onClick={() => navigate("/learning")}
+          onClick={() => navigate("/my-learning")}
           className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
             selected === "Learning" ? "text-blue-600" : "text-gray-300"
           }`}
         >
-          Learning
+          My Learning
         </a>
         <a
           onClick={() => navigate("/profile")}
@@ -70,7 +70,18 @@ const PostHeader = () => {
       <div className="flex items-center space-x-4">
         <Bell className="w-5 h-5 text-gray-400 hover:text-blue-400 cursor-pointer transition-colors" />
         <SignedIn>
-          <UserButton />
+          <UserButton appearance={{
+          elements: {
+            rootBox: {
+              width: "38px",
+              height: "38px",
+            },
+            avatarBox: {
+              width: "38px",
+              height: "38px",
+            },
+          },
+        }}/>
         </SignedIn>
       </div>
     </header>

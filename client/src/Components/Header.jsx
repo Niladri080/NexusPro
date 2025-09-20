@@ -4,7 +4,6 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/clerk-react";
-import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Header = ({ handleFeaturesClick }) => {
@@ -65,7 +64,18 @@ const Header = ({ handleFeaturesClick }) => {
       </nav>
       <div className="flex items-center space-x-6">
         <SignedIn>
-          <UserButton />
+          <UserButton appearance={{
+          elements: {
+            rootBox: {
+              width: "38px",
+              height: "38px",
+            },
+            avatarBox: {
+              width: "38px",
+              height: "38px",
+            },
+          },
+        }}/>
         </SignedIn>
         <SignedOut>
           <button
