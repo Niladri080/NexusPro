@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Home,
   Brain,
@@ -19,22 +19,48 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
 import { useUser } from "@clerk/clerk-react";
-import Cookies from 'js-cookie'
+import Cookies from "js-cookie";
+import axios from "axios";
+import { toast } from "react-toastify";
 const MyLearningPage = () => {
-  const {user}=useUser()
-  const role=Cookies.get("goal") || "";
+  const location = useLocation();
+  const { user } = useUser();
+  const role = Cookies.get("goal") || "";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
-
+  const [roadmapProgress, setroadmapProgress] = useState(0);
+  const [resumeScore, setresumeScore] = useState(0);
+  const [hasRoadmap, sethasRoadmap] = useState(false);
+  const [hasResume, sethasResume] = useState(false);
+  const [loading, setLoading] = useState(true); // <-- Add loading state
   // Sample data
+  useEffect(() => {
+    setLoading(true); // Start loading
+    axios
+      .post("http://localhost:4000/api/home/fetch-data", {
+        userId: user.id,
+      })
+      .then((res) => {
+        sethasRoadmap(res.data.hasRoadmap);
+        sethasResume(res.data.hasResume);
+        setroadmapProgress(res.data.percentage);
+        setresumeScore(res.data.atsScore);
+        setLoading(false); // Stop loading
+      })
+      .catch((err) => {
+        toast.error("Error occured while fetching data");
+        setLoading(false); // Stop loading even on error
+      });
+  }, [user, location.pathname]); // <-- Fix dependency array
   const userData = {
     name: "Alex Johnson",
     chosenCareerPath: "AI Engineer",
-    roadmapProgress: 65,
+    roadmapProgress: 70,
     resumeScore: 78,
     completedLessons: 24,
     totalLessons: 40,
@@ -106,7 +132,6 @@ const MyLearningPage = () => {
       bgColor: "bg-blue-400/10",
     },
   ];
-
 
   const CircularProgress = ({ progress, size = 100 }) => {
     const radius = (size - 8) / 2;
@@ -185,13 +210,15 @@ const MyLearningPage = () => {
           <div className="bg-white/5 border border-blue-400/10 shadow-xl rounded-2xl px-10 py-10 max-w-2xl w-full text-center backdrop-blur-2xl">
             <h1 className="text-4xl lg:text-5xl font-extrabold mb-4 text-white flex items-center justify-center gap-3">
               Welcome back,{" "}
-              <span className="text-blue-400">{user?.fullName || "Learner"}</span>!{" "}
-              <span>👋</span>
+              <span className="text-blue-400">
+                {user?.fullName || "Learner"}
+              </span>
+              ! <span>👋</span>
             </h1>
             <p className="text-blue-200 text-lg font-medium">
               Continue your journey to become an{" "}
               <span className="font-semibold text-white">
-               {role?role:"Successfull Person"}
+                {role ? role : "Successfull Person"}
               </span>
             </p>
           </div>
@@ -204,7 +231,9 @@ const MyLearningPage = () => {
             <div className="inline-flex items-center gap-3 bg-blue-600/20 px-6 py-3 rounded-full border border-blue-500/30">
               <Award className="text-blue-400" size={24} />
               <span className="text-xl font-semibold">
-                 {role?"Your Chosen Path: "+role:"You have not choosen a path"}
+                {role
+                  ? "Your Chosen Path: " + role
+                  : "You have not choosen a path"}
               </span>
             </div>
           </div>
@@ -217,10 +246,31 @@ const MyLearningPage = () => {
                 <h3 className="text-xl font-semibold mb-6 text-gray-200">
                   Roadmap Progress
                 </h3>
-                <CircularProgress progress={userData.roadmapProgress} />
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center h-[100px]">
+                    <RefreshCw
+                      className="animate-spin text-blue-400"
+                      size={48}
+                    />
+                    <span className="mt-2 text-blue-300">Loading...</span>
+                  </div>
+                ) : hasRoadmap ? (
+                  <CircularProgress progress={roadmapProgress} />
+                ) : (
+                  <p className="text-gray-400 mt-4">
+                    Choose your Roadmap first
+                  </p>
+                )}
                 <p className="text-gray-400 mt-4">
-                  Keep going! You're doing great.
+                  {hasRoadmap
+                    ? "Keep going! You're doing great."
+                    : "Choose your Roadmap first"}
                 </p>
+                {!hasRoadmap && !loading && (
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 mt-8">
+                    Build Roadmap
+                  </button>
+                )}
               </div>
             </div>
 
@@ -230,10 +280,24 @@ const MyLearningPage = () => {
                 <h3 className="text-xl font-semibold mb-6 text-gray-200">
                   Resume Score
                 </h3>
-                <CircularProgress progress={userData.resumeScore} />
-                <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center h-[100px]">
+                    <RefreshCw
+                      className="animate-spin text-blue-400"
+                      size={48}
+                    />
+                    <span className="mt-2 text-blue-300">Loading...</span>
+                  </div>
+                ) : hasResume ? (
+                  <CircularProgress progress={resumeScore} />
+                ) : (
+                  <p className="text-gray-400 mt-4">
+                    Upload Your resume to get the score
+                  </p>
+                )}
+                <button className="mt-8 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
                   <Upload size={16} />
-                  Update Resume
+                  {hasResume ? "Update Resume" : "Upload Resume"}
                 </button>
               </div>
             </div>

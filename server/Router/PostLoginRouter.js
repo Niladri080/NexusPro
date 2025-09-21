@@ -1,15 +1,28 @@
 import { Router } from "express";
 import multer from "multer";
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+export const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
 import {
   aiSuggestions,
   currentAffairs,
   deleteRoadmap,
+  fetchMyLearning,
+  fetchResume,
   fetchRoadmap,
   get_tip,
   getUserRoadmap,
   markComplete,
+  ResubmitResume,
   RoadmapGen,
   SaveRoadmap,
   uploadResume,
@@ -25,4 +38,7 @@ router.get("/get-roadmap", getUserRoadmap);
 router.post("/delete-roadmap", deleteRoadmap);
 router.post("/mark-as-complete", markComplete);
 router.post("/analyze-resume", upload.single("resume"), uploadResume);
+router.post("/fetch-resume",fetchResume)
+router.post("/resubmit-resume",ResubmitResume)
+router.post("/fetch-data",fetchMyLearning)
 export default router;

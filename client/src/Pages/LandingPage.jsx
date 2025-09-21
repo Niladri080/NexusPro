@@ -29,6 +29,14 @@ const LandingPage = () => {
   const featuresRef = useRef(null);
   const howRef = useRef(null);
 
+  // Add these handlers
+  const handleFeaturesClick = () => {
+    featuresRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const handleHowClick = () => {
+    howRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
     if (!isLoaded) return; // Wait for Clerk to load before running logic
     setLoading(true);
@@ -43,7 +51,7 @@ const LandingPage = () => {
   if (!isLoaded || loading) {
     return <Loader />;
   }
-  return  (
+  return (
     <div className="bg-[#0a0a0c] text-white font-sans overflow-hidden relative">
       <div
         className="absolute inset-0 bg-cover bg-fixed opacity-10"
@@ -102,8 +110,14 @@ const LandingPage = () => {
             </div>
             <div className="space-y-3">
               <JobSuggestion title="AI Engineer" company="Innovate Inc." />
-              <JobSuggestion title="Machine Learning Specialist" company="DataDriven Co." />
-              <JobSuggestion title="Frontend Architect" company="Creative Solutions" />
+              <JobSuggestion
+                title="Machine Learning Specialist"
+                company="DataDriven Co."
+              />
+              <JobSuggestion
+                title="Frontend Architect"
+                company="Creative Solutions"
+              />
               <JobSuggestion title="DevOps Engineer" company="CloudConnect" />
               <JobSuggestion title="Data Scientist" company="QuantInsights" />
             </div>
@@ -111,56 +125,108 @@ const LandingPage = () => {
         </section>
       </div>
       <CTASection />
-      <Footer handleFeaturesClick={handleFeaturesClick} handleHowClick={handleHowClick} />
+      <Footer
+        handleFeaturesClick={handleFeaturesClick}
+        handleHowClick={handleHowClick}
+      />
 
       {/* Styles */}
       <style jsx>{`
         @keyframes pulse-slow {
-          0%, 100% { transform: scale(1); opacity: 0.1; }
-          50% { transform: scale(1.1); opacity: 0.2; }
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.1;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.2;
+          }
         }
-        .animate-pulse-slow { animation: pulse-slow 8s infinite ease-in-out; }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s infinite ease-in-out;
+        }
 
         @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
         }
-        .animate-spin-slow { animation: spin-slow 60s linear infinite; }
-        .animate-spin-slower { animation: spin-slow 90s linear infinite reverse; }
+        .animate-spin-slow {
+          animation: spin-slow 60s linear infinite;
+        }
+        .animate-spin-slower {
+          animation: spin-slow 90s linear infinite reverse;
+        }
 
         @keyframes glow {
-          0%, 100% {
+          0%,
+          100% {
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.4),
-                        0 0 50px rgba(59, 130, 246, 0.2);
+              0 0 50px rgba(59, 130, 246, 0.2);
           }
           50% {
             box-shadow: 0 0 30px rgba(59, 130, 246, 0.6),
-                        0 0 80px rgba(59, 130, 246, 0.4);
+              0 0 80px rgba(59, 130, 246, 0.4);
           }
         }
-        .animate-glow { animation: glow 6s infinite alternate ease-in-out; }
+        .animate-glow {
+          animation: glow 6s infinite alternate ease-in-out;
+        }
 
         @keyframes float-fade {
-          0% { transform: translateY(0px) scale(0.9); opacity: 0.6; }
-          50% { transform: translateY(-10px) scale(1.1); opacity: 0.8; }
-          100% { transform: translateY(0px) scale(0.9); opacity: 0.6; }
+          0% {
+            transform: translateY(0px) scale(0.9);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translateY(-10px) scale(1.1);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(0px) scale(0.9);
+            opacity: 0.6;
+          }
         }
-        .animate-float-fade { animation: float-fade 7s infinite ease-in-out; animation-delay: 1.5s; }
+        .animate-float-fade {
+          animation: float-fade 7s infinite ease-in-out;
+          animation-delay: 1.5s;
+        }
 
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
-        .animate-delay-200 { animation-delay: 0.2s; }
-        .animate-delay-400 { animation-delay: 0.4s; }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s ease-out forwards;
+          opacity: 0;
+        }
+        .animate-delay-200 {
+          animation-delay: 0.2s;
+        }
+        .animate-delay-400 {
+          animation-delay: 0.4s;
+        }
 
         .bg-grid-pattern {
           background-image: linear-gradient(
-              to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px
+              to right,
+              rgba(59, 130, 246, 0.05) 1px,
+              transparent 1px
             ),
             linear-gradient(
-              to bottom, rgba(59, 130, 246, 0.05) 1px, transparent 1px
+              to bottom,
+              rgba(59, 130, 246, 0.05) 1px,
+              transparent 1px
             );
           background-size: 30px 30px;
         }

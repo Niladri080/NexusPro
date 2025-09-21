@@ -3,6 +3,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import { Roadmap } from "../Models/RoadmapModel.js";
 import PdfParse from "pdf-parse";
+import fs from "fs";
+import { Reusme } from "../Models/ResumeModel.js";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let cachedTip = null;
@@ -231,13 +233,17 @@ export const markComplete = async (req, res) => {
     res.status(500).json({ message: "Could not mark step as completed" });
   }
 };
+// ...existing imports and code...
+
 export const uploadResume = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(500).json({ message: "No files received" });
     }
-    const { Role } = req.body;
-    const parsedPdf = await PdfParse(req.file.buffer);
+    const { Role, userId } = req.body;
+    const fileSize = (req.file.size / 1024).toFixed(2) + " KB";
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const parsedPdf = await PdfParse(fileBuffer);
     const resumeText = parsedPdf.text;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const resumeAnalysisPrompt = `**Role:** You are an expert AI-powered resume analysis tool designed to help job seekers improve their resumes. Your analysis should mimic how an Applicant Tracking System (ATS) and a professional recruiter would evaluate a resume.
@@ -248,10 +254,10 @@ export const uploadResume = async (req, res) => {
 
 \`\`\`json
 {
-  "fileName": "string",
+  "fileName": "string",(This if the file url: /uploads/filename.pdf)
   "uploadDate": "string (YYYY-MM-DD)",
   "atsScore": "integer (0-100)",
-  "fileSize": "string",
+  "fileSize": "string"(FileSize: ...),
   "analysis": {
     "strengths": [
       "string"
@@ -282,7 +288,7 @@ export const uploadResume = async (req, res) => {
 * \`keywordMatch\`: A score (0-100) reflecting how well the skills and experience on the resume match keywords for the **target job role**.
 * \`formatScore\`: A score (0-100) assessing the resume's layout, readability, and ATS compatibility.
 * \`contentScore\`: A score (0-100) evaluating the quality of the language, use of action verbs, and quantified achievements.
-
+* \`suggestion:\`: A 15-20 word suggestion for the resume according to the user role.
 ---
 
 **BEGIN ANALYSIS:**
@@ -291,10 +297,82 @@ export const uploadResume = async (req, res) => {
 ${Role}
 **Resume Text:**
 ${resumeText}`;
-    const result =await model.generateContent(resumeAnalysisPrompt);
-    res.status(200).json({response:result.response.candidates[0].content.parts[0].text});
+    const result = await model.generateContent(resumeAnalysisPrompt);
+    const geminiResponse = result.response.candidates[0].content.parts[0].text;
+    const cleaned = geminiResponse.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    // Overwrite with actual values
+    parsed.fileSize = fileSize;
+    parsed.fileName = req.file.originalname;
+    parsed.suggestion = parsed.suggestion || ""; // Ensure suggestion exists
+
+    const newResume = new Reusme({
+      userId,
+      atsScore: Number(parsed.atsScore),
+      contentScore: Number(parsed.contentScore),
+      formatScore: Number(parsed.formatScore),
+      keywordMatch: Number(parsed.keywordMatch),
+      fileName: parsed.fileName,
+      fileSize: parsed.fileSize,
+      uploadDate: parsed.uploadDate,
+      analysis: parsed.analysis,
+      suggestion: parsed.suggestion, // <-- add this line
+    });
+    await newResume.save();
+    res.status(200).json({ response: JSON.stringify(parsed) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to analyze resume" });
+  }
+};
+export const fetchResume = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const resume = await Reusme.findOne({ userId });
+    if (!resume) {
+      return res.status(404).json({ message: "No resume found" });
+    }
+    res.status(200).json(resume);
+  } catch (err) {
+    console.error("Error fetching resume:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const ResubmitResume = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await Reusme.findOneAndDelete(userId);
+    res.status(200).json({ message: "Resume deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Request failed" });
+  }
+};
+export const fetchMyLearning = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const roadmapData = await Roadmap.findOne({ userId });
+    let hasRoadmap = false;
+    let hasResume = false;
+    let atsScore = 0;
+    let percentage = 0;
+    if (roadmapData && roadmapData.roadmap.length > 0) {
+      const completedSteps = roadmapData.roadmap.filter(
+        (step) => step.completed
+      ).length;
+      percentage = Math.floor(
+        (completedSteps / roadmapData.roadmap.length) * 100
+      );
+      hasRoadmap = true;
+    }
+    const resumeData = await Reusme.findOne({ userId });
+    if (resumeData) {
+      atsScore = resumeData.atsScore;
+      hasResume = true;
+    }
+    res.status(200).json({ percentage, atsScore, hasRoadmap, hasResume });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Data can't be fetched" });
   }
 };
