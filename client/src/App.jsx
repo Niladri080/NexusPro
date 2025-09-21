@@ -1,9 +1,13 @@
+import { useEffect } from "react";
+import axios from "axios";
+import Cookies from "js-cookie";
 import {
   RedirectToSignIn,
   SignIn,
   SignUp,
   SignedIn,
   SignedOut,
+  useUser,
 } from "@clerk/clerk-react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage";
@@ -18,7 +22,37 @@ import MyLearningPage from "./Pages/MyLearningPage";
 import ResumePage from "./Pages/ResumePage";
 import RoadmapPage from "./Pages/RoadmapPage";
 import ResourcesPage from "./Pages/ResourcesPage";
+
 function App() {
+  const { user, isLoaded, isSignedIn } = useUser();
+  useEffect(() => {
+    const fetchRoadmap = async () => {
+      try {
+        if (!isLoaded || !isSignedIn) return;
+        const userId = user.id;
+
+        const existingGoal = Cookies.get("goal");
+        const hasGoal = Cookies.get("hasGoal");
+
+        if (existingGoal && hasGoal === "true") {
+          console.log("Goal already in cookie, skipping API call.");
+          return;
+        }
+        const res = await axios.get(
+          `http://localhost:5000/api/home/get-roadmap?userId=${userId}`
+        );
+
+        if (res.data?.role) {
+          Cookies.set("goal", res.data.role, { expires: 3650 });
+          Cookies.set("hasGoal", "true", { expires: 3650 });
+        }
+      } catch (err) {
+        console.error("Failed to fetch roadmap:");
+      }
+    };
+    fetchRoadmap();
+  }, [isLoaded, isSignedIn, user]);
+
   return (
     <>
       <BrowserRouter>
@@ -56,7 +90,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
           <Route
             path="/resources"
             element={
@@ -70,39 +103,20 @@ function App() {
           <Route
             path="/sign-in/*"
             element={
-              <div
-                style={{
-                  minHeight: "100vh",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <SignIn
-                  routing="path"
-                  path="/sign-in"
-                  afterSignInUrl="/dashboard"
-                />
+              <div className="flex min-h-screen items-center justify-center">
+                <SignIn routing="path" path="/sign-in" afterSignInUrl="/dashboard" />
               </div>
             }
           />
-
           <Route
             path="/sign-up/*"
             element={
-              <div
-                style={{
-                  minHeight: "100vh",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <div className="flex min-h-screen items-center justify-center">
                 <SignUp
                   routing="path"
                   path="/sign-up"
                   afterSignUpUrl="/dashboard"
-                  redirectUrl="/dashboard" 
+                  redirectUrl="/dashboard"
                 />
               </div>
             }

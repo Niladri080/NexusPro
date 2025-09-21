@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import {
-  Home,
-  Brain,
-  MapPin,
   FileText,
-  BookOpen,
-  Menu,
-  X,
   Upload,
   Download,
   RefreshCw,
@@ -20,41 +14,14 @@ import {
   Zap,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
-
+import axios from "axios";
+import Cookies from "js-cookie";
+import { toast } from "react-toastify";
 const ResumePage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [hasResume, setHasResume] = useState(true); // Change to false to see upload state
+  const [hasResume, setHasResume] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Sample resume data
-  const resumeData = {
-    fileName: "Alex_Johnson_Resume_2024.pdf",
-    uploadDate: "2024-12-15",
-    atsScore: 82,
-    fileSize: "245 KB",
-    analysis: {
-      strengths: [
-        "Strong technical skills section with relevant keywords",
-        "Clear work experience with quantified achievements",
-        "Professional summary aligns with target role",
-        "Education section properly formatted",
-      ],
-      improvements: [
-        "Add more industry-specific keywords for AI/ML roles",
-        "Include more metrics and numbers in experience descriptions",
-        "Consider adding a projects section",
-        "Optimize formatting for better ATS readability",
-      ],
-      critical: [
-        "Missing contact information in header",
-        "Some bullet points are too lengthy for ATS parsing",
-      ],
-    },
-    keywordMatch: 78,
-    formatScore: 85,
-    contentScore: 80,
-  };
-
+  const [resumeData, setresumeData] = useState({});
   const CircularProgress = ({ progress, size = 120, strokeWidth = 8 }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
@@ -172,14 +139,38 @@ const ResumePage = () => {
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      setIsUploading(true);
-      // Simulate upload process
-      setTimeout(() => {
+    setIsUploading(true);
+    if (!file) {
+      return toast.error("File not selected. Try again later");
+    }
+    const formData = new FormData();
+    formData.append("resume", file);
+    const role = Cookies.get("goal");
+    if (role) {
+      formData.append("Role", role);
+    } else {
+      formData.append("Role", "None");
+    }
+    axios
+      .post("http://localhost:4000/api/home/analyze-resume", formData, {
+        headers: {
+          "Content-Type": "application/form-data",
+        },
+      })
+      .then((res) => {
+        const jsonString = res.data.response
+          .replace(/```json\n|```/g, "")
+          .trim();
+        const parsedSuggestions = JSON.parse(jsonString);
+        setresumeData(parsedSuggestions);
         setIsUploading(false);
         setHasResume(true);
-      }, 2000);
-    }
+        toast.success("Successfully uploaded");
+      })
+      .catch((err) => {
+        setIsUploading(false);
+        toast.error("Error Occured while parsing file. Try again later");
+      });
   };
 
   const handleResubmit = () => {

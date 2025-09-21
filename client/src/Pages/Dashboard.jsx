@@ -30,7 +30,8 @@ import axios from "axios";
 import { RiseLoader } from "react-spinners";
 import RiseLoaderWrapper from "../Components/RiseLoader";
 import { useUser } from "@clerk/clerk-react";
-
+import Cookies from 'js-cookie'
+import { useNavigate } from "react-router-dom";
 // Sparkle component matching the landing page theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -53,32 +54,6 @@ const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
     />
   );
 };
-
-// Progress Bar Component
-const AnimatedProgressBar = ({
-  progress,
-  label,
-  color = "blue",
-  showPercentage = true,
-}) => (
-  <div className="space-y-3">
-    <div className="flex justify-between items-center">
-      <span className="text-gray-300 font-medium">{label}</span>
-      {showPercentage && (
-        <span className="text-gray-400 text-sm">{progress}%</span>
-      )}
-    </div>
-    <div className="relative">
-      <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-        <div
-          className={`bg-gradient-to-r from-${color}-500 to-${color}-400 h-3 rounded-full transition-all duration-1000 ease-out shadow-lg shadow-${color}-500/30`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-    </div>
-  </div>
-);
-
 // Modern Job Card Component
 const ModernJobCard = ({ job }) => (
   <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 group backdrop-blur-sm relative overflow-hidden">
@@ -357,6 +332,9 @@ const NewsItem = ({ news }) => (
 
 const Dashboard = () => {
   const { user } = useUser();
+  const navigate=useNavigate()
+  const hasGoal = Cookies.get("hasGoal") === "true";
+  const role  = Cookies.get("goal") || "";
   const [aiTip, setaiTip] = useState("Stay curious and keep learning!");
   const [aiSuggestions, setaiSuggestions] = useState([]);
   const [currentAffairs,setcurrentAffairs] = useState([]) 
@@ -494,7 +472,7 @@ const Dashboard = () => {
               <div className="absolute w-[150px] h-[150px] bg-blue-500/60 rounded-full blur-xl animate-float-fade"></div>
             </div>
             <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6 animate-fade-in-up">
-              Welcome back, <br /> {user.fullName ? user.fullName : "User"}
+              Welcome back, <br /> {user.fullName ? user.fullName : "Learner"}
             </h1>
           </main>
           {/* Welcome Section */}
@@ -515,27 +493,31 @@ const Dashboard = () => {
                 <Target className="w-6 h-6 mr-3 text-blue-400" />
                 Your Career Roadmap
               </h3>
-              {user.hasRoadmap ? (
+              {hasGoal ? (
                 <div className="bg-[#1c1c1c] p-8 rounded-2xl border border-gray-700/50">
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h4 className="font-semibold text-white text-lg">
-                        {roadmapProgress.currentStep}
+                        {role?role:"Successfull Person"}
                       </h4>
                       <p className="text-sm text-gray-400 mt-1">
-                        Step {roadmapProgress.completedSteps} of{" "}
-                        {roadmapProgress.totalSteps}
+                        Step 1 of{" "}
+                        12
                       </p>
                     </div>
-                    <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                    <button onClick={()=>{
+                      navigate("/my-learning")
+                    }} className="text-blue-400 hover:text-blue-300 text-sm font-medium">
                       View Details <ChevronRight className="inline w-4 h-4" />
                     </button>
                   </div>
-                  <AnimatedProgressBar
+                  {/* <AnimatedProgressBar
                     progress={roadmapProgress.progress}
                     label="Overall Progress"
-                  />
-                  <button className="mt-8 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center justify-center space-x-2">
+                  /> */}
+                  <button onClick={()=>{
+                      navigate("/generate-roadmap")
+                    }} className="mt-8 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center justify-center space-x-2">
                     <span>Continue Learning</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>

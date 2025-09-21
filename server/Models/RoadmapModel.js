@@ -7,7 +7,10 @@ const RoadmapSchema=new mongoose.Schema({
     title:{type:String},
     description:{type:String},
     duration:{type:String},
-    completed:{type:Boolean,default:false}
-  }]
+    completed:{type:Boolean,default:false},
+    link:{type:String},
+  }],
+  currentIndex:{type:Number,default:0},
+  hasCompleted:{type:Boolean,default:false}
 })
 export const Roadmap=mongoose.model("Roadmap",RoadmapSchema)

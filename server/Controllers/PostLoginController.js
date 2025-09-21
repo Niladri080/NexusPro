@@ -2,6 +2,7 @@ import { Clerk } from "@clerk/clerk-sdk-node";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import { Roadmap } from "../Models/RoadmapModel.js";
+import PdfParse from "pdf-parse";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let cachedTip = null;
@@ -65,7 +66,6 @@ Ensure the entire output is a single, valid JSON array and nothing else. Do not 
 `;
     const result = await model.generateContent(suggestionsPrompt);
     const suggestions = result.response.candidates[0].content.parts[0].text;
-    console.log(suggestions);
     cachedSuggestions = suggestions;
     suggestionsCacheTime = now;
     res.status(200).json({ success: true, message: suggestions });
@@ -125,6 +125,8 @@ duration: A string estimating the time to complete the step (e.g., "4-6 weeks").
 
 completed: A boolean value, which must always be false.
 
+link: Link of resource for the particular step
+
 Here is the user's career goal: ${description}`;
     const result = await model.generateContent(prompt);
     res
@@ -144,20 +146,155 @@ export const SaveRoadmap = async (req, res) => {
       roadmap: roadmap,
     });
     await newData.save();
-    res.status(200).json({success:true})
+    res.status(200).json({ success: true });
   } catch (err) {
     console.log(err.message);
   }
 };
-export const fetchRoadmap=async (req,res)=>{
-  try{
-    const {userId}=req.body;
-    console.log(userId);
-    const results=await Roadmap.findOne({userId:userId});
-    res.status(200).json({roadmap:results.roadmap});
-  }
-  catch (err) {
-    res.status(500)
+export const fetchRoadmap = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const results = await Roadmap.findOne({ userId: userId });
+    if (!results) {
+      return res.status(500).json({ message: "Can't find details" });
+    }
+    res.status(200).json({
+      roadmap: results.roadmap,
+      currentIndex: results.currentIndex,
+      hasCompleted: results.hasCompleted,
+    });
+  } catch (err) {
+    res.status(500);
     console.log(err.message);
+  }
+};
+export const getUserRoadmap = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const roadmap = await Roadmap.findOne({ userId });
+
+    if (!roadmap) {
+      return res.status(404).json({ message: "No roadmap found" });
+    }
+
+    res.status(200).json(roadmap);
+  } catch (err) {
+    console.error("Error fetching roadmap:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const deleteRoadmap = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await Roadmap.findOneAndDelete({ userId: userId });
+    res.status(200).json({ message: "Your roadmap deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Data could not be fetched" });
+  }
+};
+export const markComplete = async (req, res) => {
+  try {
+    const { userId, stepId } = req.body;
+    const roadmapDoc = await Roadmap.findOne({ userId });
+    if (!roadmapDoc) {
+      return res.status(404).json({ message: "Roadmap not found" });
+    }
+    const stepIndex = roadmapDoc.roadmap.findIndex(
+      (step) => step.id === stepId
+    );
+    if (stepIndex === -1) {
+      return res.status(404).json({ message: "Step not found" });
+    }
+    roadmapDoc.roadmap[stepIndex].completed = true;
+    let allCompleted = true;
+    for (let i = 0; i < roadmapDoc.roadmap.length; i++) {
+      if (!roadmapDoc.roadmap[i].completed) {
+        roadmapDoc.currentIndex = i;
+        allCompleted = false;
+        break;
+      }
+    }
+    if (allCompleted) {
+      roadmapDoc.currentIndex = roadmapDoc.roadmap.length - 1;
+      roadmapDoc.hasCompleted = true;
+    } else {
+      roadmapDoc.hasCompleted = false;
+    }
+    await roadmapDoc.save();
+    res.status(200).json({
+      success: true,
+      currentIndex: roadmapDoc.currentIndex,
+      hasCompleted: roadmapDoc.hasCompleted,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Could not mark step as completed" });
+  }
+};
+export const uploadResume = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(500).json({ message: "No files received" });
+    }
+    const { Role } = req.body;
+    const parsedPdf = await PdfParse(req.file.buffer);
+    const resumeText = parsedPdf.text;
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const resumeAnalysisPrompt = `**Role:** You are an expert AI-powered resume analysis tool designed to help job seekers improve their resumes. Your analysis should mimic how an Applicant Tracking System (ATS) and a professional recruiter would evaluate a resume.
+
+**Task:** Analyze the provided resume text against the provided target job role. Based on your analysis, generate a single, valid JSON object that strictly follows the specified format and logic. Do not provide any text or explanation outside of the JSON object.If the role is None then analysis according to the resume text
+
+**JSON Output Format:**
+
+\`\`\`json
+{
+  "fileName": "string",
+  "uploadDate": "string (YYYY-MM-DD)",
+  "atsScore": "integer (0-100)",
+  "fileSize": "string",
+  "analysis": {
+    "strengths": [
+      "string"
+    ],
+    "improvements": [
+      "string"
+    ],
+    "critical": [
+      "string"
+    ]
+  },
+  "keywordMatch": "integer (0-100)",
+  "formatScore": "integer (0-100)",
+  "contentScore": "integer (0-100)"
 }
-}
+\`\`\`
+
+**Instructions for each field:**
+
+* \`fileName\`: Use a placeholder name like "resume_analysis.pdf".
+* \`uploadDate\`: Use the current date.
+* \`fileSize\`: Use a placeholder value like "N/A".
+* \`atsScore\`: Calculate an overall score from 0-100 representing the resume's general effectiveness. It should be a weighted average of the other scores.
+* \`analysis\`: An object containing three arrays of strings:
+    * \`strengths\`: List 3-4 key positive aspects of the resume.
+    * \`improvements\`: List 3-4 actionable suggestions for enhancement.
+    * \`critical\`: List 1-2 major issues that could cause the resume to be rejected. If none, return an empty array \`[]\`.
+* \`keywordMatch\`: A score (0-100) reflecting how well the skills and experience on the resume match keywords for the **target job role**.
+* \`formatScore\`: A score (0-100) assessing the resume's layout, readability, and ATS compatibility.
+* \`contentScore\`: A score (0-100) evaluating the quality of the language, use of action verbs, and quantified achievements.
+
+---
+
+**BEGIN ANALYSIS:**
+
+**Target Job Role:**
+${Role}
+**Resume Text:**
+${resumeText}`;
+    const result =await model.generateContent(resumeAnalysisPrompt);
+    res.status(200).json({response:result.response.candidates[0].content.parts[0].text});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to analyze resume" });
+  }
+};
