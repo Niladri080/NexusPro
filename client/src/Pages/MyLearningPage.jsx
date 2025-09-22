@@ -34,13 +34,12 @@ const MyLearningPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
   const [roadmapProgress, setroadmapProgress] = useState(0);
-  const [resumeScore, setresumeScore] = useState(0);
   const [hasRoadmap, sethasRoadmap] = useState(false);
+  const [resumeScore, setresumeScore] = useState(0);
   const [hasResume, sethasResume] = useState(false);
-  const [loading, setLoading] = useState(true); // <-- Add loading state
-  // Sample data
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setLoading(true); // Start loading
+    setLoading(true);
     axios
       .post("http://localhost:4000/api/home/fetch-data", {
         userId: user.id,

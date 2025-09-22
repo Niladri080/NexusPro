@@ -31,7 +31,8 @@ import { RiseLoader } from "react-spinners";
 import RiseLoaderWrapper from "../Components/RiseLoader";
 import { useUser } from "@clerk/clerk-react";
 import Cookies from 'js-cookie'
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 // Sparkle component matching the landing page theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -331,13 +332,18 @@ const NewsItem = ({ news }) => (
 );
 
 const Dashboard = () => {
+  const location=useLocation()
   const { user } = useUser();
   const navigate=useNavigate()
   const hasGoal = Cookies.get("hasGoal") === "true";
   const role  = Cookies.get("goal") || "";
   const [aiTip, setaiTip] = useState("Stay curious and keep learning!");
   const [aiSuggestions, setaiSuggestions] = useState([]);
-  const [currentAffairs,setcurrentAffairs] = useState([]) 
+  const [currentAffairs,setcurrentAffairs] = useState([]);
+  const [totalSteps, settotalSteps] = useState(0);
+  const [completedSteps, setcompletedSteps] = useState(0);
+  const [resumeScore, setresumeScore] = useState(0);
+  const [hasResume, sethasResume] = useState(false);
   useEffect(() => {
     axios
       .get("http://localhost:4000/api/home/get-tip")
@@ -372,7 +378,32 @@ const Dashboard = () => {
         setcurrentAffairs(parsedSuggestions)
     })
   },[user])
-  const roadmapProgress = {};
+  useEffect(() => {
+      axios
+        .post("http://localhost:4000/api/home/fetch-steps", {
+          userId: user.id,
+        })
+        .then((res) => {
+          settotalSteps(res.data.Total);
+          setcompletedSteps(res.data.current);
+        })
+        .catch((err) => {
+          toast.error("Error while fetching data");
+        })
+    }, [user, location.pathname]);
+useEffect(() => {
+    axios
+      .post("http://localhost:4000/api/home/fetch-data", {
+        userId: user.id,
+      })
+      .then((res) => {
+        sethasResume(res.data.hasResume);
+        setresumeScore(res.data.atsScore);
+      })
+      .catch((err) => {
+        toast.error("Error occured while fetching data");
+      });
+  }, [user, location.pathname]);
   const jobRecommendations = [
     {
       title: "Senior Frontend Developer",
@@ -501,8 +532,7 @@ const Dashboard = () => {
                         {role?role:"Successfull Person"}
                       </h4>
                       <p className="text-sm text-gray-400 mt-1">
-                        Step 1 of{" "}
-                        12
+                        Step {completedSteps} of {totalSteps}
                       </p>
                     </div>
                     <button onClick={()=>{
@@ -545,7 +575,7 @@ const Dashboard = () => {
                 <FileText className="w-6 h-6 mr-3 text-blue-400" />
                 Resume Analysis
               </h3>
-              {user.hasResume ? (
+              {hasResume ? (
                 <div className="bg-[#1c1c1c] p-8 rounded-2xl border border-gray-700/50">
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -554,9 +584,9 @@ const Dashboard = () => {
                       </h4>
                       <div className="flex items-center space-x-3 mt-2">
                         <div className="text-3xl font-bold text-green-400">
-                          85%
+                          {resumeScore}
                         </div>
-                        <span className="text-sm text-gray-400">Good</span>
+                        <span className="text-sm text-gray-400">Great job</span>
                       </div>
                     </div>
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center">
@@ -567,7 +597,9 @@ const Dashboard = () => {
                     Your resume is performing well! Consider adding more
                     quantified achievements.
                   </p>
-                  <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg text-sm transition-colors">
+                  <button onClick={()=>{
+                    navigate("/resume-upload")
+                  }} className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg text-sm transition-colors">
                     View Analysis
                   </button>
                 </div>
@@ -580,7 +612,9 @@ const Dashboard = () => {
                   <p className="text-gray-400 mb-4 text-sm">
                     Get AI-powered feedback and optimization suggestions.
                   </p>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300">
+                  <button onClick={()=>{
+                    navigate("/resume-upload")
+                  }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300">
                     Upload Now
                   </button>
                 </div>
@@ -602,7 +636,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">Tasks Completed</span>
-                  <span className="text-white font-semibold text-lg">8/12</span>
+                  <span className="text-white font-semibold text-lg">{completedSteps} / {totalSteps}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">Applications Sent</span>
