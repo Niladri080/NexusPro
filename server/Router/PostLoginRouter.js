@@ -17,8 +17,10 @@ import {
   currentAffairs,
   deleteRoadmap,
   fetchMyLearning,
+  fetchResources,
   fetchResume,
   fetchRoadmap,
+  fetchSteps,
   get_tip,
   getUserRoadmap,
   markComplete,
@@ -41,4 +43,6 @@ router.post("/analyze-resume", upload.single("resume"), uploadResume);
 router.post("/fetch-resume",fetchResume)
 router.post("/resubmit-resume",ResubmitResume)
 router.post("/fetch-data",fetchMyLearning)
+router.post("/fetch-resources",fetchResources);
+router.post("/fetch-steps",fetchSteps)
 export default router;

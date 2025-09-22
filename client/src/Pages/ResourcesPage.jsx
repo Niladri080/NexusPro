@@ -1,24 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Menu,
-  X,
   Play,
   File,
   GraduationCap,
   HelpCircle,
-  CheckCircle,
   Clock,
   Star,
   Bookmark,
   BookmarkCheck,
   Sparkles,
-  TrendingUp,
   Users,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
+import { useUser } from "@clerk/clerk-react";
+import Cookies from "js-cookie";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useLocation } from "react-router-dom";
 
 const ResourcesPage = () => {
+  const { user } = useUser();
+  const role = Cookies.get("goal") || "";
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
@@ -27,176 +32,53 @@ const ResourcesPage = () => {
   const [completedResources, setCompletedResources] = useState(
     new Set([1, 3, 7])
   );
+  const [allResources, setallResources] = useState([]);
   const [visibleResources, setVisibleResources] = useState(12);
+  const [totalSteps, settotalSteps] = useState(0);
+  const [completedSteps, setcompletedSteps] = useState(0);
+  const [isLoadingResources, setIsLoadingResources] = useState(true);
+  const [isLoadingSteps, setIsLoadingSteps] = useState(true);
 
-  // Sample user data
-  const userData = {
-    careerPath: "AI/ML Engineer",
-    completedSteps: 3,
-    totalSteps: 8,
-  };
+  useEffect(() => {
+    setIsLoadingResources(true);
+    axios
+      .post("http://localhost:4000/api/home/fetch-resources", {
+        goal: role,
+      })
+      .then((res) => {
+        const jsonString = res.data.response
+          .replace(/```json\n|```/g, "")
+          .trim();
+        const parsedSuggestions = JSON.parse(jsonString);
+        console.log(parsedSuggestions);
+        setallResources(parsedSuggestions);
+      })
+      .catch((err) => {
+        console.log(err.message);
+        toast.error("Error while fetching data");
+      })
+      .finally(() => {
+        setIsLoadingResources(false);
+      });
+  }, [user, location.pathname]);
 
-  // Sample resources data
-  const allResources = [
-    {
-      id: 1,
-      title: "Python for Machine Learning - Complete Course",
-      type: "course",
-      difficulty: "beginner",
-      description:
-        "Learn Python fundamentals with hands-on ML projects and real-world applications.",
-      duration: "12 hours",
-      rating: 4.8,
-      students: 45000,
-      tags: ["Python", "ML", "Free"],
-      isPaid: false,
-      thumbnail:
-        "https://via.placeholder.com/400x200/3B82F6/ffffff?text=Python+ML",
-    },
-    {
-      id: 2,
-      title: "Understanding Neural Networks Architecture",
-      type: "article",
-      difficulty: "intermediate",
-      description:
-        "Deep dive into neural network architectures and their practical implementations.",
-      duration: "15 min read",
-      rating: 4.6,
-      students: 12000,
-      tags: ["Neural Networks", "Deep Learning", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 3,
-      title: "Machine Learning Interview Questions",
-      type: "quiz",
-      difficulty: "intermediate",
-      description:
-        "Practice common ML interview questions with detailed explanations and solutions.",
-      duration: "30 questions",
-      rating: 4.9,
-      students: 8500,
-      tags: ["Interview", "Practice", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 4,
-      title: "Advanced TensorFlow Techniques",
-      type: "video",
-      difficulty: "advanced",
-      description:
-        "Master advanced TensorFlow features for building production-ready ML models.",
-      duration: "3.5 hours",
-      rating: 4.7,
-      students: 15000,
-      tags: ["TensorFlow", "Advanced", "Paid"],
-      isPaid: true,
-    },
-    {
-      id: 5,
-      title: "Data Preprocessing Best Practices",
-      type: "course",
-      difficulty: "intermediate",
-      description:
-        "Essential techniques for cleaning, transforming, and preparing data for ML models.",
-      duration: "8 hours",
-      rating: 4.5,
-      students: 22000,
-      tags: ["Data Science", "Preprocessing", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 6,
-      title: "Computer Vision Fundamentals",
-      type: "video",
-      difficulty: "beginner",
-      description:
-        "Introduction to computer vision concepts and OpenCV library basics.",
-      duration: "2 hours",
-      rating: 4.4,
-      students: 18000,
-      tags: ["Computer Vision", "OpenCV", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 7,
-      title: "MLOps Deployment Strategies",
-      type: "article",
-      difficulty: "advanced",
-      description:
-        "Learn how to deploy and monitor ML models in production environments.",
-      duration: "20 min read",
-      rating: 4.8,
-      students: 9500,
-      tags: ["MLOps", "Deployment", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 8,
-      title: "Natural Language Processing with BERT",
-      type: "course",
-      difficulty: "advanced",
-      description:
-        "Comprehensive guide to implementing BERT for various NLP tasks and applications.",
-      duration: "15 hours",
-      rating: 4.9,
-      students: 11000,
-      tags: ["NLP", "BERT", "Paid"],
-      isPaid: true,
-    },
-    {
-      id: 9,
-      title: "Statistics for Data Science Quiz",
-      type: "quiz",
-      difficulty: "beginner",
-      description:
-        "Test your knowledge of essential statistical concepts used in data science.",
-      duration: "25 questions",
-      rating: 4.3,
-      students: 16000,
-      tags: ["Statistics", "Basics", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 10,
-      title: "Deep Learning Model Optimization",
-      type: "video",
-      difficulty: "advanced",
-      description:
-        "Techniques for optimizing deep learning models for better performance and efficiency.",
-      duration: "4 hours",
-      rating: 4.6,
-      students: 7500,
-      tags: ["Deep Learning", "Optimization", "Paid"],
-      isPaid: true,
-    },
-    {
-      id: 11,
-      title: "Pandas Data Manipulation Guide",
-      type: "article",
-      difficulty: "beginner",
-      description:
-        "Complete guide to data manipulation using Pandas library with practical examples.",
-      duration: "12 min read",
-      rating: 4.5,
-      students: 28000,
-      tags: ["Pandas", "Data Analysis", "Free"],
-      isPaid: false,
-    },
-    {
-      id: 12,
-      title: "Reinforcement Learning Algorithms",
-      type: "course",
-      difficulty: "advanced",
-      description:
-        "Explore various RL algorithms and their applications in real-world scenarios.",
-      duration: "18 hours",
-      rating: 4.7,
-      students: 6000,
-      tags: ["Reinforcement Learning", "Algorithms", "Paid"],
-      isPaid: true,
-    },
-  ];
+  useEffect(() => {
+    setIsLoadingSteps(true);
+    axios
+      .post("http://localhost:4000/api/home/fetch-steps", {
+        userId: user.id,
+      })
+      .then((res) => {
+        settotalSteps(res.data.Total);
+        setcompletedSteps(res.data.current);
+      })
+      .catch((err) => {
+        toast.error("Error while fetching data");
+      })
+      .finally(() => {
+        setIsLoadingSteps(false);
+      });
+  }, [user, location.pathname]);
 
   const getTypeIcon = (type) => {
     switch (type) {
@@ -290,6 +172,60 @@ const ResourcesPage = () => {
     );
   };
 
+  // Loading Components
+  const SuggestedResourceSkeleton = () => (
+    <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 animate-pulse">
+      <div className="w-12 h-12 bg-gray-700 rounded-xl mb-4"></div>
+      <div className="h-5 bg-gray-700 rounded mb-2 w-3/4"></div>
+      <div className="space-y-2 mb-4">
+        <div className="h-3 bg-gray-700 rounded w-full"></div>
+        <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-3 bg-gray-700 rounded w-16"></div>
+        <div className="h-8 bg-gray-700 rounded w-16"></div>
+      </div>
+    </div>
+  );
+
+  const ResourceCardSkeleton = () => (
+    <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/60 rounded-2xl border border-blue-700/50 p-6 animate-pulse">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gray-700 rounded-full"></div>
+          <div className="h-4 bg-gray-700 rounded w-20"></div>
+        </div>
+        <div className="h-6 bg-gray-700 rounded w-20"></div>
+      </div>
+      
+      <div className="space-y-3 mb-4">
+        <div className="h-6 bg-gray-700 rounded w-full"></div>
+        <div className="h-4 bg-gray-700 rounded w-full"></div>
+        <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+      </div>
+      
+      <div className="flex items-center gap-4 mb-4">
+        <div className="h-3 bg-gray-700 rounded w-12"></div>
+        <div className="h-3 bg-gray-700 rounded w-8"></div>
+        <div className="h-3 bg-gray-700 rounded w-16"></div>
+      </div>
+      
+      <div className="flex gap-2 mb-6">
+        <div className="h-6 bg-gray-700 rounded-full w-16"></div>
+        <div className="h-6 bg-gray-700 rounded-full w-20"></div>
+        <div className="h-6 bg-gray-700 rounded-full w-12"></div>
+      </div>
+      
+      <div className="h-12 bg-gray-700 rounded-xl"></div>
+    </div>
+  );
+
+  const LoadingSpinner = ({ className = "" }) => (
+    <div className={`flex items-center justify-center ${className}`}>
+      <Loader2 className="animate-spin text-blue-400" size={32} />
+    </div>
+  );
+
   const ResourceCard = ({ resource }) => {
     const typeInfo = getTypeIcon(resource.type);
     const TypeIcon = typeInfo.icon;
@@ -381,6 +317,7 @@ const ResourcesPage = () => {
 
           {/* Action Button */}
           <button
+            onClick={() => window.open(resource.link, "_blank")}
             className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-300 mt-4
             ${
               isCompleted
@@ -441,24 +378,33 @@ const ResourcesPage = () => {
           <div className="bg-white/5 border border-blue-400/10 shadow-xl rounded-2xl px-10 py-10 max-w-3xl w-full text-center backdrop-blur-2xl">
             <h1 className="text-4xl lg:text-5xl font-extrabold mb-4 text-white flex flex-wrap items-center justify-center gap-3 break-words whitespace-normal">
               Resources for your{" "}
-              <span className="text-blue-400">{userData.careerPath}</span>{" "}
+              <span className="text-blue-400">{role ? role : "Learner"}</span>{" "}
               roadmap <span>🚀</span>
             </h1>
-            <p className="text-blue-200 text-lg font-medium">
-              You've completed {userData.completedSteps} out of{" "}
-              {userData.totalSteps} roadmap steps
-            </p>
-            {/* Progress Bar */}
-            <div className="bg-gray-700 rounded-full h-2 mt-6">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all duration-700"
-                style={{
-                  width: `${
-                    (userData.completedSteps / userData.totalSteps) * 100
-                  }%`,
-                }}
-              ></div>
-            </div>
+            
+            {isLoadingSteps ? (
+              <div className="space-y-4">
+                <div className="h-6 bg-gray-700 rounded w-2/3 mx-auto animate-pulse"></div>
+                <div className="bg-gray-700 rounded-full h-2 animate-pulse"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-blue-200 text-lg font-medium">
+                  {totalSteps > 0
+                    ? `You've completed ${completedSteps} out of ${totalSteps} roadmap steps`
+                    : "Start your journey with nexusPro"}
+                </p>
+                {/* Progress Bar */}
+                <div className="bg-gray-700 rounded-full h-2 mt-6">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0}%`,
+                    }}
+                  ></div>
+                </div>
+              </>
+            )}
           </div>
         </header>
 
@@ -472,40 +418,56 @@ const ResourcesPage = () => {
                 <h2 className="text-2xl font-semibold">Suggested for You</h2>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-6">
-                {suggestedResources.map((resource) => {
-                  const typeInfo = getTypeIcon(resource.type);
-                  const TypeIcon = typeInfo.icon;
+              {isLoadingResources ? (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <SuggestedResourceSkeleton key={i} />
+                  ))}
+                </div>
+              ) : suggestedResources.length > 0 ? (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {suggestedResources.map((resource) => {
+                    const typeInfo = getTypeIcon(resource.type);
+                    const TypeIcon = typeInfo.icon;
 
-                  return (
-                    <div
-                      key={resource.id}
-                      className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 hover:border-purple-500/30 transition-colors"
-                    >
+                    return (
                       <div
-                        className={`w-12 h-12 ${typeInfo.color} rounded-xl flex items-center justify-center mb-4`}
+                        key={resource.id}
+                        className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 hover:border-purple-500/30 transition-colors"
                       >
-                        <TypeIcon size={24} />
+                        <div
+                          className={`w-12 h-12 ${typeInfo.color} rounded-xl flex items-center justify-center mb-4`}
+                        >
+                          <TypeIcon size={24} />
+                        </div>
+                        <h3 className="font-semibold mb-2 text-white">
+                          {resource.title}
+                        </h3>
+                        <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                          {resource.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Clock size={12} />
+                            {resource.duration}
+                          </span>
+                          <button
+                            onClick={() => window.open(resource.link, "_blank")}
+                            className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                          >
+                            Start
+                          </button>
+                        </div>
                       </div>
-                      <h3 className="font-semibold mb-2 text-white">
-                        {resource.title}
-                      </h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                        {resource.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock size={12} />
-                          {resource.duration}
-                        </span>
-                        <button className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
-                          Start
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <BookOpen size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No suggested resources available at the moment.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -607,18 +569,36 @@ const ResourcesPage = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">
-                All Resources ({filteredAndSortedResources.length})
+                All Resources ({isLoadingResources ? "..." : filteredAndSortedResources.length})
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {visibleResourcesList.map((resource) => (
-                <ResourceCard key={resource.id} resource={resource} />
-              ))}
-            </div>
+            {isLoadingResources ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(12)].map((_, i) => (
+                  <ResourceCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : visibleResourcesList.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {visibleResourcesList.map((resource) => (
+                  <ResourceCard key={resource.id} resource={resource} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <BookOpen size={64} className="mx-auto mb-4 text-gray-600" />
+                <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                  No Resources Found
+                </h3>
+                <p className="text-gray-500">
+                  Try adjusting your filters to see more resources.
+                </p>
+              </div>
+            )}
 
             {/* Load More */}
-            {visibleResources < filteredAndSortedResources.length && (
+            {!isLoadingResources && visibleResources < filteredAndSortedResources.length && (
               <div className="text-center pt-8">
                 <button
                   onClick={loadMoreResources}

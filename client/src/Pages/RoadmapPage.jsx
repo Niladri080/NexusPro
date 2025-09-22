@@ -21,16 +21,15 @@ const RoadmapPage = () => {
   const [hasGoal, setHasGoal] = useState(false);
   const [role, setRole] = useState("");
   const [load, setload] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState({}); // { [stepId]: true }
+  const [completedSteps, setCompletedSteps] = useState({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  // Load saved goal on mount
   useEffect(() => {
     if (!user) {
       setIsGenerating(false);
       setShowRoadmap(false);
       return;
-    } // wait for user to be available
+    } 
     const goalExists = Cookies.get("hasGoal") === "true";
     const savedRole = Cookies.get("goal") || "";
     setHasGoal(goalExists);
@@ -270,26 +269,26 @@ const RoadmapPage = () => {
     );
   };
   const deleteJourney = () => {
-  axios
-    .post("http://localhost:4000/api/home/delete-roadmap", {
-      userId: user.id,
-    })
-    .then((res) => {
-      Cookies.remove("hasGoal");
-      Cookies.remove("goal");
-      setload(!load);
-      setShowRoadmap(false);
-      setRoadmapData({});
-      setSelectedGoal(null);
-      setSentRoad([]);
-      setCompletedSteps({});  // ✅ Reset completed steps
-      setCurrentStepIndex(0); // ✅ Reset current step index
-      toast.success("Your path deleted successfully");
-    })
-    .catch((err) => {
-      toast.error("Error occurred while changing path");
-    });
-};
+    axios
+      .post("http://localhost:4000/api/home/delete-roadmap", {
+        userId: user.id,
+      })
+      .then((res) => {
+        Cookies.remove("hasGoal");
+        Cookies.remove("goal");
+        setload(!load);
+        setShowRoadmap(false);
+        setRoadmapData({});
+        setSelectedGoal(null);
+        setSentRoad([]);
+        setCompletedSteps({}); // ✅ Reset completed steps
+        setCurrentStepIndex(0); // ✅ Reset current step index
+        toast.success("Your path deleted successfully");
+      })
+      .catch((err) => {
+        toast.error("Error occurred while changing path");
+      });
+  };
 
   const handleStartJourney = () => {
     const roleName = selectedGoal.title;
@@ -311,32 +310,31 @@ const RoadmapPage = () => {
   };
 
   const handleGoalSelect = (goal) => {
-  setSelectedGoal(goal);
-  setCustomGoal("");
-  setShowRoadmap(false);
-  setIsGenerating(true);
-  setCompletedSteps({});   // ✅ Reset steps every time you select a goal
-  setCurrentStepIndex(0);  // ✅ Reset index too
+    setSelectedGoal(goal);
+    setCustomGoal("");
+    setShowRoadmap(false);
+    setIsGenerating(true);
+    setCompletedSteps({}); // ✅ Reset steps every time you select a goal
+    setCurrentStepIndex(0); // ✅ Reset index too
 
-  const input = goal.title + " " + goal.description;
-  axios
-    .post("http://localhost:4000/api/home/roadmap", { description: input })
-    .then((res) => {
-      const jsonString = res.data.message
-        .replace(/```json\n|```/g, "")
-        .trim();
-      const parsedRoadmap = JSON.parse(jsonString);
-      setSentRoad(parsedRoadmap.roadmap);
-      setRoadmapData((prev) => ({
-        ...prev,
-        [goal.id]: parsedRoadmap.roadmap,
-      }));
-      setIsGenerating(false);
-      setShowRoadmap(true);
-    })
-    .catch((err) => setIsGenerating(false));
-};
-
+    const input = goal.title + " " + goal.description;
+    axios
+      .post("http://localhost:4000/api/home/roadmap", { description: input })
+      .then((res) => {
+        const jsonString = res.data.message
+          .replace(/```json\n|```/g, "")
+          .trim();
+        const parsedRoadmap = JSON.parse(jsonString);
+        setSentRoad(parsedRoadmap.roadmap);
+        setRoadmapData((prev) => ({
+          ...prev,
+          [goal.id]: parsedRoadmap.roadmap,
+        }));
+        setIsGenerating(false);
+        setShowRoadmap(true);
+      })
+      .catch((err) => setIsGenerating(false));
+  };
 
   const handleCustomGoalSubmit = () => {
     if (!customGoal.trim()) return;
@@ -432,30 +430,42 @@ const RoadmapPage = () => {
 
           {/* Custom goal */}
           {!hasGoal && (
-            <div className="mb-12 max-w-2xl mx-auto">
-              <div className="bg-white/5 border border-blue-400/10 p-8 rounded-2xl shadow-xl backdrop-blur-2xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <Sparkles className="text-purple-400" size={24} />
-                  <h3 className="text-xl font-semibold">Custom Career Goal</h3>
-                </div>
-                <div className="space-y-4">
-                  <textarea
-                    value={customGoal}
-                    onChange={(e) => setCustomGoal(e.target.value)}
-                    placeholder="Describe your career goal..."
-                    className="w-full p-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-24"
-                  />
-                  <button
-                    onClick={handleCustomGoalSubmit}
-                    disabled={!customGoal.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    <Sparkles size={20} />
-                    Generate My Roadmap
-                  </button>
+            <>
+              {/* Add this divider and message before the custom goal box */}
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex-1 h-px bg-gray-700"></div>
+                <span className="text-gray-400 bg-[#0a0a0c] px-4">
+                  Can't find one? Describe your career goal here.
+                </span>
+                <div className="flex-1 h-px bg-gray-700"></div>
+              </div>
+              <div className="mb-12 max-w-2xl mx-auto">
+                <div className="bg-white/5 border border-blue-400/10 p-8 rounded-2xl shadow-xl backdrop-blur-2xl">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Sparkles className="text-purple-400" size={24} />
+                    <h3 className="text-xl font-semibold">
+                      Custom Career Goal
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    <textarea
+                      value={customGoal}
+                      onChange={(e) => setCustomGoal(e.target.value)}
+                      placeholder="Describe your career goal..."
+                      className="w-full p-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-24"
+                    />
+                    <button
+                      onClick={handleCustomGoalSubmit}
+                      disabled={!customGoal.trim()}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    >
+                      <Sparkles size={20} />
+                      Generate My Roadmap
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* Loading */}

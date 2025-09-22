@@ -30,7 +30,6 @@ function App() {
       try {
         if (!isLoaded || !isSignedIn) return;
         const userId = user.id;
-
         const existingGoal = Cookies.get("goal");
         const hasGoal = Cookies.get("hasGoal");
 

@@ -262,9 +262,7 @@ const MyLearningPage = () => {
                   </p>
                 )}
                 <p className="text-gray-400 mt-4">
-                  {hasRoadmap
-                    ? "Keep going! You're doing great."
-                    : "Choose your Roadmap first"}
+                  {hasRoadmap && "Keep going! You're doing great."}
                 </p>
                 {!hasRoadmap && !loading && (
                   <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 mt-8">

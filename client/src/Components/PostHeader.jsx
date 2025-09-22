@@ -59,12 +59,12 @@ const PostHeader = () => {
           My Learning
         </a>
         <a
-          onClick={() => navigate("/profile")}
+          onClick={() => navigate("/forum")}
           className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
-            selected === "Profile" ? "text-blue-600" : "text-gray-300"
+            selected === "Forum" ? "text-blue-600" : "text-gray-300"
           }`}
         >
-          Profile
+          Commumity Forum
         </a>
       </nav>
       <div className="flex items-center space-x-4">

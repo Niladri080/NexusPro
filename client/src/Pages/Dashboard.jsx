@@ -347,7 +347,7 @@ const Dashboard = () => {
       .catch((err) => {
         console.log(err);
       });
-  }, []);
+  }, [user]);
   useEffect(() => {
     axios
       .get("http://localhost:4000/api/home/suggestions")
@@ -361,7 +361,7 @@ const Dashboard = () => {
       .catch((err) => {
         console.log(err);
       });
-  }, []);
+  }, [user]);
   useEffect(()=>{
     axios.get("http://localhost:4000/api/home/current-affairs")
     .then((res)=>{
@@ -371,7 +371,7 @@ const Dashboard = () => {
         const parsedSuggestions = JSON.parse(jsonString);
         setcurrentAffairs(parsedSuggestions)
     })
-  },[])
+  },[user])
   const roadmapProgress = {};
   const jobRecommendations = [
     {

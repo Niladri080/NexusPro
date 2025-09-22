@@ -16,6 +16,9 @@ const SUGGESTIONS_CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 let cachedCurrentAffairs = null;
 let currentAffairsCacheTime = 0;
 const CURRENT_AFFAIRS_CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+let cachedResources=null;
+let ResourcesCacheTime=0;
+const RESOURCE_CACHE_DURATION = 24*60 * 60 * 1000;
 export const get_tip = async (req, res) => {
   try {
     const now = Date.now();
@@ -301,11 +304,9 @@ ${resumeText}`;
     const geminiResponse = result.response.candidates[0].content.parts[0].text;
     const cleaned = geminiResponse.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
-
-    // Overwrite with actual values
     parsed.fileSize = fileSize;
     parsed.fileName = req.file.originalname;
-    parsed.suggestion = parsed.suggestion || ""; // Ensure suggestion exists
+    parsed.suggestion = parsed.suggestion || "";
 
     const newResume = new Reusme({
       userId,
@@ -376,3 +377,87 @@ export const fetchMyLearning = async (req, res) => {
     res.status(500).json({ message: "Data can't be fetched" });
   }
 };
+export const fetchResources = async (req, res) => {
+  try {
+    const now = Date.now();
+     if (cachedResources && now - ResourcesCacheTime < RESOURCE_CACHE_DURATION) {
+      return res.status(200).json({ response : cachedResources });
+    }
+    const { goal } = req.body;
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `
+     learning assistant that curates high-quality, real-world educational resources for tech professionals.
+
+**Task:** Generate a list of 15-20 diverse and practical learning resources based on the user's specified goal: "${goal}". If the user's goal is "none", provide a general but valuable list of resources for a software developer.
+
+**Instructions & Constraints:**
+1.  **Output Format:** The output MUST be a single, valid JSON array of objects. Do not include any text, explanations, or markdown formatting like \`\`\`json before or after the array.
+2.  **Resource Types:** Each resource's "type" must be one of the following four strings: "course", "article", "quiz", or "video".
+3.  **Working Links:** The "link" for each resource must be a real, valid, and publicly accessible URL. **DO NOT use placeholder links.** Find actual resources on platforms like YouTube, Medium, Coursera, Udemy, freeCodeCamp, etc.
+4.  **Data Realism:** All data points (rating, students, etc.) should be realistic and plausible for the resource provided.
+5.  **Diversity:** The list should include a mix of resource types and difficulty levels (beginner, intermediate, advanced).
+
+**JSON Object Schema (Strictly follow this structure for each object in the array):**
+\`\`\`json
+{
+  "id": "integer",
+  "title": "string",
+  "type": "string (must be 'course', 'article', 'quiz', or 'video')",
+  "difficulty": "string (e.g., 'beginner', 'intermediate', 'advanced')",
+  "description": "string (A concise, one-sentence description)",
+  "duration": "string (e.g., '12 hours', '15 min read', '30 questions')",
+  "rating": "float (e.g., 4.8)",
+  "students": "integer (e.g., 45000)",
+  "tags": ["array", "of", "strings"],
+  "isPaid": "boolean",
+  "link": "string (A valid, working URL to the resource)"
+}
+\`\`\`
+
+**Example Object:**
+\`\`\`json
+{
+  "id": 1,
+  "title": "Python for Everybody - Full Course",
+  "type": "course",
+  "difficulty": "beginner",
+  "description": "Learn the fundamentals of programming using Python 3, taught by Dr. Charles Severance.",
+  "duration": "13 hours",
+  "rating": 4.9,
+  "students": 5000000,
+  "tags": ["Python", "Programming", "Free"],
+  "isPaid": false,
+  "link": "https://www.youtube.com/watch?v=8DvywoWv6fI"
+}
+\`\`\`
+
+Now, generate the JSON array based on the user's goal.
+`;
+    const result = await model.generateContent(prompt);
+    const generatedText = result.response.candidates[0].content.parts[0].text;
+    cachedResources = generatedText;
+    ResourcesCacheTime = now;
+    res.status(200).json({ response: generatedText });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Data can't be fetched" });
+  }
+};
+export const fetchSteps=async (req,res)=>{
+  
+  try{
+  const {userId}=req.body;
+  const roadMapData=await Roadmap.findOne({userId});
+  if (!roadMapData){
+    return res.status(200).json({current:0,Total:0});
+  }
+  const current =roadMapData.currentIndex;
+  const Total=roadMapData.roadmap.length;
+  return res.status(200).json({current,Total});
+  }
+  catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Data can't be fetched" });
+  }
+  
+}
