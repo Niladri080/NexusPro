@@ -13,20 +13,27 @@ export const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 import {
+  addComment,
   aiSuggestions,
+  CreatePost,
   currentAffairs,
+  DashResource,
+  deleteComment,
   deleteRoadmap,
   fetchMyLearning,
+  fetchPost,
   fetchResources,
   fetchResume,
   fetchRoadmap,
   fetchSteps,
   get_tip,
+  getPostDetails,
   getUserRoadmap,
   markComplete,
   ResubmitResume,
   RoadmapGen,
   SaveRoadmap,
+  toggleLike,
   uploadResume,
 } from "../Controllers/PostLoginController.js";
 const router = Router();
@@ -40,9 +47,17 @@ router.get("/get-roadmap", getUserRoadmap);
 router.post("/delete-roadmap", deleteRoadmap);
 router.post("/mark-as-complete", markComplete);
 router.post("/analyze-resume", upload.single("resume"), uploadResume);
-router.post("/fetch-resume",fetchResume)
-router.post("/resubmit-resume",ResubmitResume)
-router.post("/fetch-data",fetchMyLearning)
+router.post("/fetch-resume",fetchResume);
+router.post("/resubmit-resume",ResubmitResume);
+router.post("/fetch-data",fetchMyLearning);
 router.post("/fetch-resources",fetchResources);
-router.post("/fetch-steps",fetchSteps)
+router.post("/fetch-steps",fetchSteps);
+router.post("/dash-resource",DashResource);
+router.post("/create-post",CreatePost)
+router.get("/fetch-posts",fetchPost)
+router.post("/like-post/:postId", toggleLike);
+router.post("/add-comment/:postId", addComment);
+router.delete("/delete-comment/:postId/:commentId", deleteComment);
+router.get("/post-details/:postId", getPostDetails);
+
 export default router;

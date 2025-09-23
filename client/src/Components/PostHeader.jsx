@@ -19,8 +19,8 @@ const PostHeader = () => {
     case "/learning":
       selected = "Learning";
       break;
-    case "/profile":
-      selected = "Profile";
+    case "/forum":
+      selected = "Forum";
       break;
     default:
       selected = ""; // No highlight if none match
@@ -64,7 +64,7 @@ const PostHeader = () => {
             selected === "Forum" ? "text-blue-600" : "text-gray-300"
           }`}
         >
-          Commumity Forum
+          Commumity 
         </a>
       </nav>
       <div className="flex items-center space-x-4">

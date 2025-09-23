@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Play,
   File,
@@ -38,20 +38,19 @@ const ResourcesPage = () => {
   const [completedSteps, setcompletedSteps] = useState(0);
   const [isLoadingResources, setIsLoadingResources] = useState(true);
   const [isLoadingSteps, setIsLoadingSteps] = useState(true);
-
-  useEffect(() => {
+  const fetchedRef = useRef(false);
+useEffect(() => {
+  if (fetchedRef.current) return;
+  fetchedRef.current = true;
     setIsLoadingResources(true);
     axios
       .post("http://localhost:4000/api/home/fetch-resources", {
         goal: role,
+        userId:user.id
       })
       .then((res) => {
-        const jsonString = res.data.response
-          .replace(/```json\n|```/g, "")
-          .trim();
-        const parsedSuggestions = JSON.parse(jsonString);
-        console.log(parsedSuggestions);
-        setallResources(parsedSuggestions);
+        console.log(res.data.response);
+        setallResources(res.data.response);
       })
       .catch((err) => {
         console.log(err.message);
@@ -311,11 +310,7 @@ const ResourcesPage = () => {
               </span>
             )}
           </div>
-
-          {/* Spacer to push button to bottom */}
           <div className="flex-1" />
-
-          {/* Action Button */}
           <button
             onClick={() => window.open(resource.link, "_blank")}
             className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-300 mt-4
@@ -572,7 +567,6 @@ const ResourcesPage = () => {
                 All Resources ({isLoadingResources ? "..." : filteredAndSortedResources.length})
               </h2>
             </div>
-
             {isLoadingResources ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(12)].map((_, i) => (

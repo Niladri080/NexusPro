@@ -30,6 +30,7 @@ import { toast } from "react-toastify";
 const MyLearningPage = () => {
   const location = useLocation();
   const { user } = useUser();
+  const navigate = useNavigate();
   const role = Cookies.get("goal") || "";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
@@ -38,6 +39,22 @@ const MyLearningPage = () => {
   const [resumeScore, setresumeScore] = useState(0);
   const [hasResume, sethasResume] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [roadmapSteps, setroadmapSteps] = useState([]);
+  const [currentIndex, setcurrentIndex] = useState(-1);
+  useEffect(() => {
+    axios
+      .post("http://localhost:4000/api/home/fetch-roadmap", {
+        userId: user.id,
+      })
+      .then((res) => {
+        setroadmapSteps(res.data.roadmap);
+        setcurrentIndex(res.data.currentIndex);
+      })
+      .catch((err) => {
+        toast.error("Error ocurred while fetching data");
+      });
+  }, [location.pathname, user]);
+
   useEffect(() => {
     setLoading(true);
     axios
@@ -49,13 +66,13 @@ const MyLearningPage = () => {
         sethasResume(res.data.hasResume);
         setroadmapProgress(res.data.percentage);
         setresumeScore(res.data.atsScore);
-        setLoading(false); // Stop loading
+        setLoading(false);
       })
       .catch((err) => {
         toast.error("Error occured while fetching data");
-        setLoading(false); // Stop loading even on error
+        setLoading(false);
       });
-  }, [user, location.pathname]); // <-- Fix dependency array
+  }, [user, location.pathname]);
   const userData = {
     name: "Alex Johnson",
     chosenCareerPath: "AI Engineer",
@@ -67,46 +84,6 @@ const MyLearningPage = () => {
     badges: 5,
     weeklyGoal: 85,
   };
-
-  const roadmapSteps = [
-    {
-      id: 1,
-      title: "Master Python Fundamentals",
-      completed: true,
-      duration: "2 weeks",
-    },
-    {
-      id: 2,
-      title: "Learn Machine Learning Basics",
-      completed: true,
-      duration: "3 weeks",
-    },
-    {
-      id: 3,
-      title: "Build Portfolio Project #1",
-      completed: true,
-      duration: "2 weeks",
-    },
-    {
-      id: 4,
-      title: "Data Structures & Algorithms",
-      completed: false,
-      current: true,
-      duration: "4 weeks",
-    },
-    {
-      id: 5,
-      title: "Deep Learning Specialization",
-      completed: false,
-      duration: "6 weeks",
-    },
-    {
-      id: 6,
-      title: "Build Advanced AI Project",
-      completed: false,
-      duration: "4 weeks",
-    },
-  ];
 
   const statistics = [
     {
@@ -370,8 +347,11 @@ const MyLearningPage = () => {
                       </h3>
                       <p className="text-gray-400">{step.duration}</p>
                     </div>
-                    {step.current && (
-                      <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+                    {currentIndex == index && (
+                      <button
+                        onClick={() => window.open(step.link || "#", "_blank")}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                      >
                         Continue Learning
                         <ArrowRight size={18} />
                       </button>
@@ -382,7 +362,12 @@ const MyLearningPage = () => {
             </div>
 
             <div className="text-center mt-8">
-              <button className="px-8 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
+              <button
+                onClick={() => {
+                  navigate("/generate-roadmap");
+                }}
+                className="px-8 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
                 View Complete Roadmap
               </button>
             </div>
@@ -395,7 +380,12 @@ const MyLearningPage = () => {
               <p className="text-blue-100 mb-4">
                 Complete today's quiz challenge to maintain your streak!
               </p>
-              <button className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium">
+              <button
+                onClick={() => {
+                  toast.info("This feature will be available soon");
+                }}
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              >
                 Start Challenge
               </button>
             </div>
@@ -405,7 +395,12 @@ const MyLearningPage = () => {
               <p className="text-blue-100 mb-4">
                 Get personalized guidance from your AI career mentor
               </p>
-              <button className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium">
+              <button
+                onClick={() => {
+                  toast.info("This feature will be available soon");
+                }}
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              >
                 Chat Now
               </button>
             </div>

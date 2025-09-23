@@ -1,24 +1,22 @@
-import { Clerk } from "@clerk/clerk-sdk-node";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import { Roadmap } from "../Models/RoadmapModel.js";
 import PdfParse from "pdf-parse";
 import fs from "fs";
 import { Reusme } from "../Models/ResumeModel.js";
+import { Resource } from "../Models/ResourceModel.js";
+import Post from "../Models/PostModel.js";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let cachedTip = null;
 let cacheTime = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const CACHE_DURATION = 12 * 60 * 60 * 1000;
 let cachedSuggestions = null;
 let suggestionsCacheTime = 0;
-const SUGGESTIONS_CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const SUGGESTIONS_CACHE_DURATION = 12 * 60 * 60 * 1000; 
 let cachedCurrentAffairs = null;
 let currentAffairsCacheTime = 0;
-const CURRENT_AFFAIRS_CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-let cachedResources=null;
-let ResourcesCacheTime=0;
-const RESOURCE_CACHE_DURATION = 24*60 * 60 * 1000;
+const CURRENT_AFFAIRS_CACHE_DURATION = 12 * 60 * 60 * 1000;
 export const get_tip = async (req, res) => {
   try {
     const now = Date.now();
@@ -27,7 +25,7 @@ export const get_tip = async (req, res) => {
     }
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = `
-    Give me one short, practical and motivational tech tip of the day for developers.
+    Give me one unique, practical and motivational tech tip of the day for developers.
     Keep it under 20 words.
     Example: "Write tests first to avoid future bugs."
     `;
@@ -192,6 +190,7 @@ export const deleteRoadmap = async (req, res) => {
   try {
     const { userId } = req.body;
     await Roadmap.findOneAndDelete({ userId: userId });
+    await Resource.findOneAndDelete({userId:userId});
     res.status(200).json({ message: "Your roadmap deleted" });
   } catch (err) {
     res.status(500).json({ message: "Data could not be fetched" });
@@ -379,11 +378,11 @@ export const fetchMyLearning = async (req, res) => {
 };
 export const fetchResources = async (req, res) => {
   try {
-    const now = Date.now();
-     if (cachedResources && now - ResourcesCacheTime < RESOURCE_CACHE_DURATION) {
-      return res.status(200).json({ response : cachedResources });
+    const { goal,userId } = req.body;
+    const preResult=await Resource.findOne({userId});
+    if (preResult){
+      return res.status(200).json({response:preResult.resource})
     }
-    const { goal } = req.body;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = `
      learning assistant that curates high-quality, real-world educational resources for tech professionals.
@@ -410,7 +409,7 @@ export const fetchResources = async (req, res) => {
   "students": "integer (e.g., 45000)",
   "tags": ["array", "of", "strings"],
   "isPaid": "boolean",
-  "link": "string (A valid, working URL to the resource)"
+  "link": "string (A valid, working URL to the resource) Please provide a valid working specially the youtube links they should be working"
 }
 \`\`\`
 
@@ -435,9 +434,14 @@ Now, generate the JSON array based on the user's goal.
 `;
     const result = await model.generateContent(prompt);
     const generatedText = result.response.candidates[0].content.parts[0].text;
-    cachedResources = generatedText;
-    ResourcesCacheTime = now;
-    res.status(200).json({ response: generatedText });
+    const cleaned = generatedText.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    const newResource=new Resource({
+      userId:userId,
+      resource:parsed
+    })
+    await newResource.save();
+    res.status(200).json({ response: parsed });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Data can't be fetched" });
@@ -459,5 +463,175 @@ export const fetchSteps=async (req,res)=>{
     console.log(err.message);
     res.status(500).json({ message: "Data can't be fetched" });
   }
-  
 }
+export const DashResource=async(req,res)=>{
+  try{
+    const {userId}=req.body;
+    const result=await Resource.findOne({userId});
+    const response=[];
+    for (let i=0;i<6 && i<result.resource.length;i++){
+      response.push(result.resource[i]);
+    }
+    res.status(200).json({resource:response})
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Data can't be fetched" });
+  }
+}
+
+export const CreatePost = async (req, res) => {
+  try {
+    const {userId, userName, imgUrl, category, title, content, tags, Comments, Likes, time} = req.body;
+    const newPost = new Post({
+      userId, userName, imgUrl, category, title, content, tags, Comments, Likes, time
+    });
+    await newPost.save();
+    res.status(201).json({ message: "Post created successfully", post: newPost });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Post creation failed" });
+  }
+}
+export const fetchPost=async (req,res)=>{
+  try{
+    const allPosts=await Post.find();
+    res.status(200).json({posts:allPosts});
+  }
+  catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Data can't be fetched" });
+  }
+}
+export const toggleLike = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { userId, userName } = req.body;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Check if user already liked the post
+    const userLiked = post.LikedBy?.includes(userId);
+    
+    if (userLiked) {
+      // Unlike the post
+      post.Likes = Math.max(0, post.Likes - 1);
+      post.LikedBy = post.LikedBy.filter(id => id !== userId);
+    } else {
+      // Like the post
+      post.Likes += 1;
+      if (!post.LikedBy) {
+        post.LikedBy = [];
+      }
+      post.LikedBy.push(userId);
+    }
+
+    await post.save();
+
+    res.status(200).json({
+      message: userLiked ? "Post unliked successfully" : "Post liked successfully",
+      post: post,
+      isLiked: !userLiked,
+      totalLikes: post.Likes
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to toggle like" });
+  }
+};
+
+// Add a comment to a post
+export const addComment = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { by, byimg, comment } = req.body;
+
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({ message: "Comment cannot be empty" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const newComment = {
+      by: by || 'Anonymous',
+      byimg: byimg || '',
+      comment: comment.trim(),
+      time: Date.now().toString()
+    };
+
+    post.Comments.push(newComment);
+    await post.save();
+
+    res.status(201).json({
+      message: "Comment added successfully",
+      comment: newComment,
+      post: post
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to add comment" });
+  }
+};
+
+// Delete a comment
+export const deleteComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const { userId } = req.body;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const commentIndex = post.Comments.findIndex(comment => comment._id.toString() === commentId);
+    if (commentIndex === -1) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Optional: Check if user owns the comment or post
+    if (post.Comments[commentIndex].by !== userName || post.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized to delete this comment" });
+    }
+
+    post.Comments.splice(commentIndex, 1);
+    await post.save();
+
+    res.status(200).json({
+      message: "Comment deleted successfully",
+      post: post
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to delete comment" });
+  }
+};
+
+export const getPostDetails = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { userId } = req.query;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const isLiked = userId ? post.LikedBy?.includes(userId) || false : false;
+
+    res.status(200).json({
+      post: post,
+      isLiked: isLiked,
+      totalLikes: post.Likes,
+      totalComments: post.Comments.length
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to fetch post details" });
+  }
+};

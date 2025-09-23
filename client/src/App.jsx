@@ -22,6 +22,7 @@ import MyLearningPage from "./Pages/MyLearningPage";
 import ResumePage from "./Pages/ResumePage";
 import RoadmapPage from "./Pages/RoadmapPage";
 import ResourcesPage from "./Pages/ResourcesPage";
+import CommunityForum from "./Pages/CommunityPage";
 
 function App() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -94,6 +95,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ResourcesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/forum"
+            element={
+              <ProtectedRoute>
+                <CommunityForum />
               </ProtectedRoute>
             }
           />
