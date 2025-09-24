@@ -6,6 +6,7 @@ import fs from "fs";
 import { Reusme } from "../Models/ResumeModel.js";
 import { Resource } from "../Models/ResourceModel.js";
 import Post from "../Models/PostModel.js";
+import { Skill } from "../Models/SkillModel.js";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let cachedTip = null;
@@ -250,16 +251,16 @@ export const uploadResume = async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const resumeAnalysisPrompt = `**Role:** You are an expert AI-powered resume analysis tool designed to help job seekers improve their resumes. Your analysis should mimic how an Applicant Tracking System (ATS) and a professional recruiter would evaluate a resume.
 
-**Task:** Analyze the provided resume text against the provided target job role. Based on your analysis, generate a single, valid JSON object that strictly follows the specified format and logic. Do not provide any text or explanation outside of the JSON object.If the role is None then analysis according to the resume text
+**Task:** Analyze the provided resume text against the provided target job role. Based on your analysis, generate a single, valid JSON object that strictly follows the specified format and logic. Do not provide any text or explanation outside of the JSON object. If the role is "None", then analyze the resume generally.
 
 **JSON Output Format:**
 
 \`\`\`json
 {
-  "fileName": "string",(This if the file url: /uploads/filename.pdf)
+  "fileName": "string",
   "uploadDate": "string (YYYY-MM-DD)",
   "atsScore": "integer (0-100)",
-  "fileSize": "string"(FileSize: ...),
+  "fileSize": "string",
   "analysis": {
     "strengths": [
       "string"
@@ -271,42 +272,55 @@ export const uploadResume = async (req, res) => {
       "string"
     ]
   },
+  "extractedSkills": [
+    "string"
+  ],
   "keywordMatch": "integer (0-100)",
   "formatScore": "integer (0-100)",
-  "contentScore": "integer (0-100)"
+  "contentScore": "integer (0-100)",
+  "suggestion": "string"
 }
 \`\`\`
 
 **Instructions for each field:**
 
-* \`fileName\`: Use a placeholder name like "resume_analysis.pdf".
+* \`fileName\`: Extract from the file URL if provided (e.g., from "/uploads/filename.pdf" get "filename.pdf"), otherwise use a placeholder like "resume.pdf".
 * \`uploadDate\`: Use the current date.
-* \`fileSize\`: Use a placeholder value like "N/A".
-* \`atsScore\`: Calculate an overall score from 0-100 representing the resume's general effectiveness. It should be a weighted average of the other scores.
+* \`fileSize\`: Extract from file metadata if provided (e.g., "FileSize: 245 KB"), otherwise use "N/A".
+* \`atsScore\`: Calculate an overall score from 0-100 representing the resume's general effectiveness. This should be a weighted average of the keyword, format, and content scores.
 * \`analysis\`: An object containing three arrays of strings:
     * \`strengths\`: List 3-4 key positive aspects of the resume.
     * \`improvements\`: List 3-4 actionable suggestions for enhancement.
     * \`critical\`: List 1-2 major issues that could cause the resume to be rejected. If none, return an empty array \`[]\`.
+* **\`extractedSkills\`**: **Extract all relevant technical skills (e.g., Python, React, AWS) and soft skills (e.g., Leadership, Communication) from the resume text and list them as an array of strings.**
 * \`keywordMatch\`: A score (0-100) reflecting how well the skills and experience on the resume match keywords for the **target job role**.
 * \`formatScore\`: A score (0-100) assessing the resume's layout, readability, and ATS compatibility.
 * \`contentScore\`: A score (0-100) evaluating the quality of the language, use of action verbs, and quantified achievements.
-* \`suggestion:\`: A 15-20 word suggestion for the resume according to the user role.
+* \`suggestion\`: A concise 15-20 word suggestion for improving the resume based on the analysis.
+
 ---
 
 **BEGIN ANALYSIS:**
 
 **Target Job Role:**
 ${Role}
+
 **Resume Text:**
 ${resumeText}`;
     const result = await model.generateContent(resumeAnalysisPrompt);
     const geminiResponse = result.response.candidates[0].content.parts[0].text;
     const cleaned = geminiResponse.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
+    const skills= parsed.extractedSkills || [];
+    const newSkill=new Skill({
+      userId:userId,
+      skills:skills,
+      location:""
+    })
+    await newSkill.save();
     parsed.fileSize = fileSize;
     parsed.fileName = req.file.originalname;
     parsed.suggestion = parsed.suggestion || "";
-
     const newResume = new Reusme({
       userId,
       atsScore: Number(parsed.atsScore),
@@ -317,7 +331,7 @@ ${resumeText}`;
       fileSize: parsed.fileSize,
       uploadDate: parsed.uploadDate,
       analysis: parsed.analysis,
-      suggestion: parsed.suggestion, // <-- add this line
+      suggestion: parsed.suggestion,
     });
     await newResume.save();
     res.status(200).json({ response: JSON.stringify(parsed) });
@@ -546,7 +560,7 @@ export const toggleLike = async (req, res) => {
 export const addComment = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { by, byimg, comment } = req.body;
+    const { by, byimg, comment, byId } = req.body;
 
     if (!comment || !comment.trim()) {
       return res.status(400).json({ message: "Comment cannot be empty" });
@@ -560,6 +574,7 @@ export const addComment = async (req, res) => {
     const newComment = {
       by: by || 'Anonymous',
       byimg: byimg || '',
+      byId: byId || 'Unknown',
       comment: comment.trim(),
       time: Date.now().toString()
     };
@@ -578,10 +593,9 @@ export const addComment = async (req, res) => {
   }
 };
 
-// Delete a comment
-export const deleteComment = async (req, res) => {
+export const deletePost = async (req, res) => {
   try {
-    const { postId, commentId } = req.params;
+    const { postId } = req.params;
     const { userId } = req.body;
 
     const post = await Post.findById(postId);
@@ -589,26 +603,16 @@ export const deleteComment = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    const commentIndex = post.Comments.findIndex(comment => comment._id.toString() === commentId);
-    if (commentIndex === -1) {
-      return res.status(404).json({ message: "Comment not found" });
+    // Check if user is the post owner
+    if (post.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized: You can only delete your own posts" });
     }
 
-    // Optional: Check if user owns the comment or post
-    if (post.Comments[commentIndex].by !== userName || post.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized to delete this comment" });
-    }
-
-    post.Comments.splice(commentIndex, 1);
-    await post.save();
-
-    res.status(200).json({
-      message: "Comment deleted successfully",
-      post: post
-    });
+    await Post.findByIdAndDelete(postId);
+    res.status(200).json({ message: "Post deleted successfully" });
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ message: "Failed to delete comment" });
+    res.status(500).json({ message: "Failed to delete post" });
   }
 };
 
@@ -634,4 +638,4 @@ export const getPostDetails = async (req, res) => {
     console.log(err.message);
     res.status(500).json({ message: "Failed to fetch post details" });
   }
-};
+}

@@ -219,11 +219,7 @@ useEffect(() => {
     </div>
   );
 
-  const LoadingSpinner = ({ className = "" }) => (
-    <div className={`flex items-center justify-center ${className}`}>
-      <Loader2 className="animate-spin text-blue-400" size={32} />
-    </div>
-  );
+ 
 
   const ResourceCard = ({ resource }) => {
     const typeInfo = getTypeIcon(resource.type);

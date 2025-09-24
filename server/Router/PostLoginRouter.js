@@ -18,7 +18,7 @@ import {
   CreatePost,
   currentAffairs,
   DashResource,
-  deleteComment,
+  deletePost,
   deleteRoadmap,
   fetchMyLearning,
   fetchPost,
@@ -57,7 +57,7 @@ router.post("/create-post",CreatePost)
 router.get("/fetch-posts",fetchPost)
 router.post("/like-post/:postId", toggleLike);
 router.post("/add-comment/:postId", addComment);
-router.delete("/delete-comment/:postId/:commentId", deleteComment);
 router.get("/post-details/:postId", getPostDetails);
+router.delete('/delete-post/:postId', deletePost); 
 
 export default router;

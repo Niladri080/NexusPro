@@ -16,9 +16,6 @@ import {
   Briefcase,
   Target,
   User,
-  MoreHorizontal,
-  Bookmark,
-  ExternalLink,
   X,
   Upload,
   Hash,
@@ -27,7 +24,9 @@ import {
   ChevronUp,
   ChevronDown,
   Eye,
-  Loader
+  Loader,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import PostHeader from '../Components/PostHeader';
 import { useUser } from '@clerk/clerk-react';
@@ -104,19 +103,19 @@ const postAPI = {
     });
   },
 
-  // Delete comment functionality
-  deleteComment: (postId, commentId, userId) => {
+  // Delete post functionality
+  deletePost: (postId, userId) => {
     return new Promise((resolve, reject) => {
-      apiClient.delete(`/delete-comment/${postId}/${commentId}`, { 
-        data: { userId } 
+      apiClient.delete(`/delete-post/${postId}`, {
+        data: { userId }
       })
         .then(response => {
-          console.log('Comment deleted successfully:', response.data);
+          console.log('Post deleted successfully:', response.data);
           resolve(response.data);
         })
         .catch(error => {
-          console.error('Error deleting comment:', error.response?.data || error.message);
-          reject(error.response?.data || { message: 'Failed to delete comment' });
+          console.error('Error deleting post:', error.response?.data || error.message);
+          reject(error.response?.data || { message: 'Failed to delete post' });
         });
     });
   },
@@ -134,7 +133,7 @@ const postAPI = {
     });
   },
 
-  // Additional API methods for future use
+  // Update post functionality
   updatePost: (postId, updateData) => {
     return new Promise((resolve, reject) => {
       apiClient.put(`/update-post/${postId}`, updateData)
@@ -143,18 +142,6 @@ const postAPI = {
         })
         .catch(error => {
           reject(error.response?.data || { message: 'Failed to update post' });
-        });
-    });
-  },
-
-  deletePost: (postId) => {
-    return new Promise((resolve, reject) => {
-      apiClient.delete(`/delete-post/${postId}`)
-        .then(response => {
-          resolve(response.data);
-        })
-        .catch(error => {
-          reject(error.response?.data || { message: 'Failed to delete post' });
         });
     });
   }
@@ -189,7 +176,7 @@ const transformPost = (backendPost, currentUserId = null) => ({
   content: backendPost.content,
   timeAgo: formatTimeAgo(backendPost.time),
   views: backendPost.Views || Math.floor(Math.random() * 5000) + 100,
-  likes: backendPost.Likes,
+  likes: backendPost.Likes || 0,
   isLiked: currentUserId ? (backendPost.LikedBy || []).includes(currentUserId) : false,
   isBookmarked: false, // This would need separate implementation
   engagement: `${(Math.random() * 10 + 1).toFixed(1)}%`, // Placeholder calculation
@@ -228,11 +215,10 @@ const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
 };
 
 // Post component with like, comment, share functionality
-const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComment, currentUser }) => {
+const ForumPost = ({ post, onLike, onComment, onShare, onDeletePost, currentUser }) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(post.isLiked);
-  const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked);
   const [likes, setLikes] = useState(post.likes);
   const [commentLoading, setCommentLoading] = useState(false);
   const [likePulse, setLikePulse] = useState(false);
@@ -246,19 +232,15 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
   const handleLike = () => {
     if (!currentUser) return;
     
+    // Prevent multiple rapid clicks
+    if (likePulse) return;
+    
     // Visual feedback
     setLikePulse(true);
     setTimeout(() => setLikePulse(false), 300);
     
-    // Update local state immediately for smooth UX
-    const newLikedState = !isLiked;
-    const newLikesCount = newLikedState ? likes + 1 : likes - 1;
-    
-    setIsLiked(newLikedState);
-    setLikes(newLikesCount);
-    
-    // Call parent handler
-    onLike(post.id, currentUser.id);
+    // Call parent handler with current state
+    onLike(post.id, currentUser.id, isLiked);
   };
 
   const handleComment = () => {
@@ -270,7 +252,9 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
       const commentData = {
         by: currentUser.fullName || 'Anonymous',
         byimg: currentUser.imageUrl || '',
-        comment: newComment.trim()
+        byId:currentUser.id,
+        comment: newComment.trim(),
+        time: Date.now().toString()
       };
 
       onComment(post.id, commentData)
@@ -285,14 +269,15 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
         });
     }
   };
-
-  const handleDeleteComment = (commentId) => {
-    if (!currentUser || !onDeleteComment) return;
+  const handleDeletePost = () => {
+    if (!currentUser || !onDeletePost) return;
     
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      onDeleteComment(post.id, commentId, currentUser.id);
+    if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      onDeletePost(post.id, currentUser.id);
     }
   };
+
+
   const getCategoryIcon = (category) => {
     switch (category) {
       case 'Career Advice': return <Briefcase className="w-4 h-4" />;
@@ -312,6 +297,8 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
       default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
+
+  const isPostOwner = currentUser && post.authorId === currentUser.id;
 
   return (
     <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/30 transition-all duration-300 backdrop-blur-sm relative overflow-hidden group">
@@ -345,9 +332,17 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all duration-300">
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+            
+            {/* Show delete button only to post owner */}
+            {isPostOwner && (
+              <button 
+                onClick={handleDeletePost}
+                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-300"
+                title="Delete post"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -379,7 +374,7 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
               className={`flex items-center space-x-2 text-sm font-medium transition-all duration-300 hover:scale-105 ${
                 isLiked ? 'text-red-400' : 'text-gray-400 hover:text-red-400'
               } ${likePulse ? 'animate-pulse scale-110' : ''}`}
-              disabled={!currentUser}
+              disabled={!currentUser || likePulse}
             >
               <Heart className={`w-5 h-5 transition-all duration-200 ${isLiked ? 'fill-red-400 scale-110' : ''}`} />
               <span className="font-semibold">{likes}</span>
@@ -427,15 +422,6 @@ const ForumPost = ({ post, onLike, onComment, onShare, onBookmark, onDeleteComme
                         <span className="text-sm font-medium text-white">{comment.author}</span>
                         <span className="text-xs text-gray-500">{comment.timeAgo}</span>
                       </div>
-                      {currentUser && (comment.author === (currentUser.fullName || 'Anonymous') || post.authorId === currentUser.id) && (
-                        <button
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="opacity-0 group-hover/comment:opacity-100 p-1 text-gray-400 hover:text-red-400 transition-all duration-200"
-                          title="Delete comment"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
                     </div>
                     <p className="text-sm text-gray-300">{comment.content}</p>
                   </div>
@@ -621,33 +607,6 @@ const CreatePostModal = ({ isOpen, onClose, onSubmit, currentUser }) => {
 
           <div className="flex items-center space-x-4 pt-6 border-t border-gray-700/50">
             <button
-              type="button"
-              className="flex items-center space-x-2 px-4 py-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-colors disabled:opacity-50"
-              disabled={loading}
-            >
-              <Upload className="w-4 h-4" />
-              <span>Add Image</span>
-            </button>
-            <button
-              type="button"
-              className="flex items-center space-x-2 px-4 py-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-colors disabled:opacity-50"
-              disabled={loading}
-            >
-              <ExternalLink className="w-4 h-4" />
-              <span>Add Link</span>
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-4 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 border border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white py-3 rounded-xl font-semibold transition-colors disabled:opacity-50"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
               type="submit"
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/25 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               disabled={loading || !postData.title.trim() || !postData.content.trim()}
@@ -704,24 +663,29 @@ const CommunityForum = () => {
       });
   };
 
-  const handleLike = (postId, userId) => {
+  const handleLike = (postId, userId, currentLikeState) => {
     if (!user) return;
     
     // Find the current post
     const currentPost = posts.find(post => post.id === postId);
     if (!currentPost) return;
 
-    // Optimistic update
-    const wasLiked = currentPost.isLiked;
-    const newLikesCount = wasLiked ? currentPost.likes - 1 : currentPost.likes + 1;
+    // Prevent multiple likes by same user - check if user is already in likedBy array
+    const userAlreadyLiked = currentPost.likedBy.includes(userId);
+    
+    // Optimistic update based on current state
+    const newLikedState = !currentLikeState;
+    const newLikesCount = userAlreadyLiked ? 
+      Math.max(0, currentPost.likes - 1) : 
+      currentPost.likes + 1;
 
-    setPosts(posts.map(post => 
+    setPosts(prevPosts => prevPosts.map(post => 
       post.id === postId 
         ? { 
             ...post, 
             likes: newLikesCount,
-            isLiked: !wasLiked,
-            likedBy: wasLiked 
+            isLiked: newLikedState,
+            likedBy: userAlreadyLiked 
               ? post.likedBy.filter(id => id !== userId)
               : [...post.likedBy, userId]
           }
@@ -736,8 +700,9 @@ const CommunityForum = () => {
           post.id === postId 
             ? { 
                 ...post, 
-                likes: response.totalLikes,
-                isLiked: response.isLiked
+                likes: response.totalLikes || response.post.Likes,
+                isLiked: response.isLiked,
+                likedBy: response.post.LikedBy || []
               }
             : post
         ));
@@ -770,7 +735,7 @@ const CommunityForum = () => {
               ? { 
                   ...post, 
                   comments: [...post.comments, {
-                    id: response.comment._id,
+                    id: response.comment._id || Date.now().toString(),
                     author: commentData.by,
                     content: commentData.comment,
                     timeAgo: 'Just now',
@@ -814,6 +779,25 @@ const CommunityForum = () => {
       });
   };
 
+  const handleDeletePost = (postId, userId) => {
+    if (!user) return;
+    
+    // Optimistic update - remove post immediately
+    const originalPosts = [...posts];
+    setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+
+    // Make API call
+    postAPI.deletePost(postId, userId)
+      .then(response => {
+        console.log('Post deleted successfully:', response);
+      })
+      .catch(error => {
+        console.error('Error deleting post:', error);
+        // Revert optimistic update on error
+        setPosts(originalPosts);
+      });
+  };
+
   const handleShare = (postId) => {
     const shareUrl = `${window.location.origin}/post/${postId}`;
     
@@ -829,7 +813,6 @@ const CommunityForum = () => {
     } else {
       navigator.clipboard.writeText(shareUrl)
         .then(() => {
-          // You could show a toast notification here
           console.log('Link copied to clipboard');
         })
         .catch(error => {
@@ -844,9 +827,6 @@ const CommunityForum = () => {
         ? { ...post, isBookmarked: !post.isBookmarked }
         : post
     ));
-    
-    // Here you could make an API call to save bookmark to backend
-    // postAPI.bookmarkPost(postId, user.id)
   };
 
   const handleCreatePost = (newPostData) => {
@@ -863,6 +843,8 @@ const CommunityForum = () => {
         tags: newPostData.tags,
         Comments: [],
         Likes: 0,
+        LikedBy: [],
+        Views: 0,
         time: Date.now()
       };
 
@@ -879,9 +861,13 @@ const CommunityForum = () => {
             content: newPostData.content,
             tags: newPostData.tags,
             timeAgo: 'Just now',
+            views: 0,
             likes: 0,
             isLiked: false,
-            comments: []
+            isBookmarked: false,
+            engagement: '0%',
+            comments: [],
+            likedBy: []
           };
           setPosts(prevPosts => [newPost, ...prevPosts]);
           resolve(response);
@@ -904,9 +890,9 @@ const CommunityForum = () => {
   const sortedPosts = [...filteredPosts].sort((a, b) => {
     switch (sortBy) {
       case 'Popular':
-        return b.views - a.views;
+        return (b.views || 0) - (a.views || 0);
       case 'Most Liked':
-        return b.likes - a.likes;
+        return (b.likes || 0) - (a.likes || 0);
       case 'Recent':
       default:
         // Sort by timestamp for proper recent ordering
@@ -1043,7 +1029,7 @@ const CommunityForum = () => {
               <span>Create Post</span>
             </button>
           </div>
-        </div>
+        </div>     
         {/* Posts Feed */}
         <div className="space-y-8">
           {sortedPosts.length === 0 ? (
@@ -1076,6 +1062,7 @@ const CommunityForum = () => {
                 onShare={handleShare}
                 onBookmark={handleBookmark}
                 onDeleteComment={handleDeleteComment}
+                onDeletePost={handleDeletePost}
                 currentUser={user}
               />
             ))

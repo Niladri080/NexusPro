@@ -23,6 +23,7 @@ import ResumePage from "./Pages/ResumePage";
 import RoadmapPage from "./Pages/RoadmapPage";
 import ResourcesPage from "./Pages/ResourcesPage";
 import CommunityForum from "./Pages/CommunityPage";
+import JobPage from "./Pages/JobPage";
 
 function App() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -102,7 +103,15 @@ function App() {
             path="/forum"
             element={
               <ProtectedRoute>
-                <CommunityForum />
+                <CommunityForum/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs"
+            element={
+              <ProtectedRoute>
+                <JobPage/>
               </ProtectedRoute>
             }
           />
