@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
-  Filter,
   MapPin,
   Clock,
   DollarSign,
@@ -10,12 +9,16 @@ import {
   Share,
   Star,
   ChevronDown,
-  Settings,
   Briefcase,
-  GraduationCap,
-   Monitor
+  Monitor,
+  Loader2
 } from "lucide-react";
 import PostHeader from "../Components/PostHeader";
+import axios from "axios";
+import { useUser } from "@clerk/clerk-react";
+import { toast } from "react-toastify";
+import Cookies from 'js-cookie';
+import { useLocation } from "react-router-dom";
 
 const JobCard = ({ job, onLike, onShare }) => {
   const [isLiked, setIsLiked] = useState(false);
@@ -112,7 +115,7 @@ const JobCard = ({ job, onLike, onShare }) => {
         </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {job.skills.slice(0, 4).map((skill, index) => (
+          {job.skills && job.skills.slice(0, 4).map((skill, index) => (
             <span
               key={index}
               className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/20"
@@ -120,7 +123,7 @@ const JobCard = ({ job, onLike, onShare }) => {
               {skill}
             </span>
           ))}
-          {job.skills.length > 4 && (
+          {job.skills && job.skills.length > 4 && (
             <span className="px-3 py-1 bg-gray-700/50 text-gray-400 text-xs rounded-full">
               +{job.skills.length - 4} more
             </span>
@@ -142,7 +145,12 @@ const JobCard = ({ job, onLike, onShare }) => {
             </div>
             <span className="text-xs text-gray-500">{job.postedTime}</span>
           </div>
-          <button className="px-6 py-2  bg-blue-500  text-white rounded-lg hover:from-blue-700 ion-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25">
+          <button 
+            onClick={() => {
+              window.open(job.link || '#', '_blank');
+            }} 
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25"
+          >
             Apply Now
           </button>
         </div>
@@ -153,9 +161,22 @@ const JobCard = ({ job, onLike, onShare }) => {
 
 const FilterDropdown = ({ title, options, selected, onSelect, icon: Icon }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div className="relative">
+    <div ref={dropdownRef} className="relative filter-dropdown z-[9999]">
+      {/* Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 bg-[#1c1c1c] border border-gray-700/50 rounded-lg text-gray-300 hover:border-blue-500/50 transition-all duration-300"
@@ -163,13 +184,19 @@ const FilterDropdown = ({ title, options, selected, onSelect, icon: Icon }) => {
         <Icon className="text-blue-400 w-4 h-4" />
         <span className="text-sm">{selected || title}</span>
         <ChevronDown
-          className={`w-3 h-3 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-3 h-3 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
+      {/* Dropdown Menu - Opens upward */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-[#1c1c1c] border border-gray-700/50 rounded-lg shadow-xl z-10 animate-fade-in-up">
+        <div
+          className="absolute bottom-full left-0 mb-2 w-48 bg-[#1c1c1c] border border-gray-700/50 rounded-lg shadow-xl animate-fade-in-up max-h-60 overflow-y-auto z-[9999]"
+          style={{
+            transform: 'translateY(0)',
+            position: 'absolute',
+            zIndex: 99999
+          }}
+        >
           {options.map((option, index) => (
             <button
               key={index}
@@ -188,142 +215,29 @@ const FilterDropdown = ({ title, options, selected, onSelect, icon: Icon }) => {
   );
 };
 
+const LoadingSpinner = ({ message }) => (
+  <div className="flex flex-col items-center justify-center py-16">
+    <Loader2 className="w-12 h-12 text-blue-400 animate-spin mb-4" />
+    <p className="text-gray-400 text-lg">{message}</p>
+    <p className="text-gray-400 text-sm mt-2">This may take a minute</p>
+  </div>
+);
+
 const JobPage = () => {
+  const { user } = useUser();
+  const loca=useLocation();
+  const role = Cookies.get("goal") ? Cookies.get("goal") : "Technical Employee";
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
-    location: "",
     salary: "",
     type: "",
-    experience: "",
   });
-  const [sortBy, setSortBy] = useState("Best Match");
-  const [location,setLocation]=useState("");
-  const jobs = [
-    {
-      id: 1,
-      title: "Senior AI Engineer",
-      company: "TechFlow AI",
-      location: "San Francisco, CA",
-      remote: true,
-      salary: "$140k - $200k",
-      type: "Full-time",
-      rating: 5,
-      reviews: 234,
-      matchScore: 95,
-      postedTime: "2 hours ago",
-      description:
-        "Join our cutting-edge AI team to develop next-generation machine learning solutions. Work with state-of-the-art technologies and shape the future of artificial intelligence.",
-      skills: [
-        "Python",
-        "TensorFlow",
-        "PyTorch",
-        "Machine Learning",
-        "Deep Learning",
-        "NLP",
-      ],
-    },
-    {
-      id: 2,
-      title: "Full Stack Developer",
-      company: "Innovate Solutions",
-      location: "New York, NY",
-      remote: false,
-      salary: "$110k - $150k",
-      type: "Full-time",
-      rating: 4,
-      reviews: 189,
-      matchScore: 87,
-      postedTime: "5 hours ago",
-      description:
-        "Build scalable web applications using modern technologies. Work in a collaborative environment with talented developers and designers.",
-      skills: ["React", "Node.js", "TypeScript", "MongoDB", "AWS", "GraphQL"],
-    },
-    {
-      id: 3,
-      title: "Data Scientist",
-      company: "DataInsights Corp",
-      location: "Austin, TX",
-      remote: true,
-      salary: "$125k - $170k",
-      type: "Full-time",
-      rating: 5,
-      reviews: 156,
-      matchScore: 92,
-      postedTime: "1 day ago",
-      description:
-        "Analyze complex datasets to drive business decisions. Use statistical methods and machine learning to uncover insights from large-scale data.",
-      skills: [
-        "Python",
-        "R",
-        "SQL",
-        "Tableau",
-        "Statistics",
-        "Machine Learning",
-      ],
-    },
-    {
-      id: 4,
-      title: "Frontend Developer",
-      company: "Creative Labs",
-      location: "Los Angeles, CA",
-      remote: true,
-      salary: "$95k - $130k",
-      type: "Full-time",
-      rating: 4,
-      reviews: 98,
-      matchScore: 78,
-      postedTime: "2 days ago",
-      description:
-        "Create beautiful and responsive user interfaces. Work with designers to bring creative visions to life using modern frontend technologies.",
-      skills: [
-        "React",
-        "Vue.js",
-        "CSS3",
-        "JavaScript",
-        "Figma",
-        "Tailwind CSS",
-      ],
-    },
-    {
-      id: 5,
-      title: "DevOps Engineer",
-      company: "CloudTech Systems",
-      location: "Seattle, WA",
-      remote: false,
-      salary: "$120k - $160k",
-      type: "Full-time",
-      rating: 4,
-      reviews: 143,
-      matchScore: 85,
-      postedTime: "3 days ago",
-      description:
-        "Manage cloud infrastructure and deployment pipelines. Ensure reliable and scalable systems using modern DevOps practices.",
-      skills: ["AWS", "Docker", "Kubernetes", "Jenkins", "Terraform", "Linux"],
-    },
-    {
-      id: 6,
-      title: "UX Designer",
-      company: "Design Studio Pro",
-      location: "Miami, FL",
-      remote: true,
-      salary: "$85k - $115k",
-      type: "Contract",
-      rating: 5,
-      reviews: 67,
-      matchScore: 72,
-      postedTime: "4 days ago",
-      description:
-        "Design user-centered digital experiences. Conduct user research and create wireframes and prototypes for web and mobile applications.",
-      skills: [
-        "Figma",
-        "Sketch",
-        "Adobe XD",
-        "User Research",
-        "Prototyping",
-        "Design Systems",
-      ],
-    },
-  ];
+  const [location, setLocation] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [remote, setRemote] = useState(false);
+  const [jobType, setJobType] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const handleLike = (jobId) => {
     console.log(`Liked job ${jobId}`);
@@ -332,19 +246,137 @@ const JobPage = () => {
   const handleShare = (jobId) => {
     console.log(`Shared job ${jobId}`);
   };
-  const [remote, setRemote] = useState(false);
-  const [jobType, setJobType] = useState('');
+
+  // Initial job fetch
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    setIsInitialLoading(true);
+    axios.post("http://localhost:4000/api/home/fetch-jobs", { userId: user.id })
+      .then((res) => {
+        console.log(res.data.jobs[0].job);
+        setJobs(res.data.jobs[0].job);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Something went wrong. Try again later");
+      })
+      .finally(() => {
+        setIsInitialLoading(false);
+      });
+  }, [user,loca.pathname]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+    if (!user?.id) {
+      toast.error("Please login first");
+      return;
+    }
+    setIsLoading(true);
+    axios.post("http://localhost:4000/api/home/get-jobs", {
+      location: location.toLowerCase(),
+      userId: user.id,
+      role: role,
+      remote: remote,
+      jobType: jobType ? jobType.toLowerCase() : null
+    })
+      .then((res) => {
+        setJobs(res.data.response);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Something went wrong. Try again later");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
+
+  // Filter jobs based on search term and filters
+  const filteredJobs = jobs.filter((job) => {
+    const matchesSearch = job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         job.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         job.skills?.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Improved salary filtering
+    const matchesSalary = !filters.salary || (() => {
+      if (filters.salary === "Not Disclosed") {
+        return !job.salary || job.salary === "Not Disclosed" || job.salary.toLowerCase().includes("not disclosed");
+      }
+      
+      // Extract numeric value from filter (e.g., "5k+" -> 5)
+      const filterAmount = parseInt(filters.salary.replace('k+', ''));
+      
+      // Extract numeric value from job salary
+      const jobSalaryStr = job.salary?.toLowerCase() || '';
+      
+      // Handle various salary formats
+      if (jobSalaryStr.includes('k') || jobSalaryStr.includes('thousand')) {
+        // Extract numbers from job salary (e.g., "50k", "25-30k", "₹50,000")
+        const salaryNumbers = jobSalaryStr.match(/(\d+)/g);
+        if (salaryNumbers && salaryNumbers.length > 0) {
+          // Take the first number as the minimum salary
+          const jobMinSalary = parseInt(salaryNumbers[0]);
+          return jobMinSalary >= filterAmount;
+        }
+      }
+      
+      // Handle lakh format (e.g., "5 lpa", "3.5 lakh")
+      if (jobSalaryStr.includes('lpa') || jobSalaryStr.includes('lakh')) {
+        const salaryNumbers = jobSalaryStr.match(/(\d+\.?\d*)/g);
+        if (salaryNumbers && salaryNumbers.length > 0) {
+          const jobMinSalary = parseFloat(salaryNumbers[0]) * 100; // Convert lakh to thousands
+          return jobMinSalary >= filterAmount;
+        }
+      }
+      
+      // Handle direct number format (e.g., "50000", "25000-30000")
+      const salaryNumbers = jobSalaryStr.match(/(\d+)/g);
+      if (salaryNumbers && salaryNumbers.length > 0) {
+        const jobMinSalary = parseInt(salaryNumbers[0]);
+        // If the number is greater than 1000, assume it's in absolute value, convert to thousands
+        if (jobMinSalary > 1000) {
+          return (jobMinSalary / 1000) >= filterAmount;
+        }
+        // If less than 1000, assume it's already in thousands
+        return jobMinSalary >= filterAmount;
+      }
+      
+      // If we can't parse the salary, include it (don't filter out)
+      return true;
+    })();
+    
+    const matchesType = !filters.type || job.type?.toLowerCase().includes(filters.type.toLowerCase());
+
+    return matchesSearch && matchesSalary && matchesType;
+  });
 
   const popularLocations = ['Bengaluru', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai', 'Pune'];
 
   const handleQuickLocation = (selectedLocation) => {
     setLocation(selectedLocation);
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] text-white font-sans overflow-hidden relative">
+        <div
+          className="absolute inset-0 bg-cover bg-fixed opacity-10"
+          style={{
+            backgroundImage: 'url("/images/space.png")',
+            backgroundPosition: "center top",
+            backgroundSize: "cover",
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-blue-900/10"></div>
+        <div className="relative z-10 container mx-auto px-6 lg:px-8 py-6">
+          <PostHeader />
+          <LoadingSpinner message="Loading your personalized job recommendations..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-white font-sans overflow-hidden relative">
@@ -359,9 +391,11 @@ const JobPage = () => {
       ></div>
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-blue-900/10"></div>
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none z-0"></div>
+      
       <div className="relative z-10 container mx-auto px-6 lg:px-8 py-6">
         {/* Header */}
         <PostHeader />
+        
         <main className="text-center py-20 lg:py-32 relative mb-20">
           <div className="absolute inset-0 flex items-center justify-center -z-10">
             <div className="w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -378,97 +412,110 @@ const JobPage = () => {
             and career goals.
           </p>
         </main>
-        <div className="w-full max-w-lg mx-auto">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-white mb-2">Find Your Dream Job</h2>
-        <p className="text-gray-400">Search for opportunities in your preferred location</p>
-      </div>
-      <div className="backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 shadow-2xl">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">
-              Job Location
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <MapPin className="w-5 h-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Enter city (e.g., Bengaluru, Mumbai)"
-                className="w-full pl-12 pr-4 py-3.5 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-600/50"
-              />
-            </div>
+
+        {/* Job Search Form */}
+        <div className="w-full max-w-lg mx-auto mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-white mb-2">Find Your Dream Job</h2>
+            <p className="text-gray-400">Search for opportunities in your preferred location</p>
           </div>
-          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/30">
-            <div className="flex items-start space-x-3">
-              <div className="flex items-center h-5">
-                <input
-                  id="remote"
-                  type="checkbox"
-                  checked={remote}
-                  onChange={(e) => setRemote(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2 focus:ring-offset-0 transition-colors cursor-pointer"
-                />
-              </div>
-              <div className="flex-1">
-                <label htmlFor="remote" className="flex items-center cursor-pointer">
-                  <div className="flex items-center space-x-2">
-                    <Monitor className="w-5 h-5 text-green-400" />
-                    <span className="text-gray-300 font-medium">Include Remote Jobs</span>
-                  </div>
+          <div className="backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 shadow-2xl">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">
+                  Job Location
                 </label>
-                <p className="text-gray-500 text-sm mt-1">Find opportunities you can work from anywhere</p>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <MapPin className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Enter city (e.g., Bengaluru, Mumbai)"
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-600/50"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300">
-              Job Type (Optional)
-            </label>
-            <select 
-              value={jobType}
-              onChange={(e) => setJobType(e.target.value)}
-              className="w-full px-4 py-3.5 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-600/50 cursor-pointer"
-            >
-              <option value="">All Types</option>
-              <option value="full-time">Full-time</option>
-              <option value="part-time">Part-time</option>
-              <option value="contract">Contract</option>
-              <option value="freelance">Freelance</option>
-              <option value="internship">Internship</option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            className="w-full bg-gradient-to-r bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-gray-900">
-            <div className="flex items-center justify-center space-x-2">
-              <Search className="w-5 h-5" />
-              <span>Search Jobs</span>
-            </div>
-          </button>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-400">Popular locations:</p>
-            <div className="flex flex-wrap gap-2">
-              {popularLocations.map((loc) => (
-                <button
-                  key={loc}
-                  type="button"
-                  onClick={() => handleQuickLocation(loc)}
-                  className="px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white text-sm rounded-lg transition-all duration-200 border border-gray-600/30 hover:border-gray-500/50 hover:scale-105"
+              
+              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/30">
+                <div className="flex items-start space-x-3">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="remote"
+                      type="checkbox"
+                      checked={remote}
+                      onChange={(e) => setRemote(e.target.checked)}
+                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2 focus:ring-offset-0 transition-colors cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="remote" className="flex items-center cursor-pointer">
+                      <div className="flex items-center space-x-2">
+                        <Monitor className="w-5 h-5 text-green-400" />
+                        <span className="text-gray-300 font-medium">Include Remote Jobs</span>
+                      </div>
+                    </label>
+                    <p className="text-gray-500 text-sm mt-1">Find opportunities you can work from anywhere</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">
+                  Job Type (Optional)
+                </label>
+                <select 
+                  value={jobType}
+                  onChange={(e) => setJobType(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-600/50 cursor-pointer"
                 >
-                  {loc}
-                </button>
-              ))}
+                  <option value="">All Types</option>
+                  <option value="full-time">Full-time</option>
+                  <option value="part-time">Part-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="freelance">Freelance</option>
+                  <option value="internship">Internship</option>
+                </select>
+              </div>
+              
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/25 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-gray-900"
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Search className="w-5 h-5" />
+                  )}
+                  <span>{isLoading ? 'Searching...' : 'Search Jobs'}</span>
+                </div>
+              </button>
+              
+              <div className="space-y-3">
+                <p className="text-sm text-gray-400">Popular locations:</p>
+                <div className="flex flex-wrap gap-2">
+                  {popularLocations.map((loc) => (
+                    <button
+                      key={loc}
+                      type="button"
+                      onClick={() => handleQuickLocation(loc)}
+                      className="px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white text-sm rounded-lg transition-all duration-200 border border-gray-600/30 hover:border-gray-500/50 hover:scale-105"
+                    >
+                      {loc}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        {/* Search and Filter Section */}
         <section className="container mx-auto px-6 lg:px-8 py-8">
           <div className="bg-[#1c1c1c]/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 mb-8">
             <div className="flex flex-col lg:flex-row gap-4 items-center">
@@ -485,91 +532,80 @@ const JobPage = () => {
               </div>
 
               {/* Filters */}
-              <div className="flex flex-wrap gap-3">
-                <FilterDropdown
-                  title="Location"
-                  options={[
-                    "Remote",
-                    "San Francisco",
-                    "New York",
-                    "Austin",
-                    "Seattle",
-                    "Los Angeles",
-                  ]}
-                  selected={filters.location}
-                  onSelect={(value) =>
-                    setFilters({ ...filters, location: value })
-                  }
-                  icon={MapPin}
-                />
+              <div className="flex flex-wrap gap-3 relative z-[50]">
                 <FilterDropdown
                   title="Salary"
-                  options={["$50k+", "$75k+", "$100k+", "$125k+", "$150k+"]}
+                  options={[
+                    "Not Disclosed", 
+                    "5k+", "10k+", "15k+", "20k+", "25k+", "30k+", "35k+", "40k+", "45k+", "50k+", 
+                    "55k+", "60k+", "65k+", "70k+", "75k+", "80k+", "85k+", "90k+", "95k+", "100k+"
+                  ]}
                   selected={filters.salary}
                   onSelect={(value) =>
-                    setFilters({ ...filters, salary: value })
+                    setFilters((prev) => ({ ...prev, salary: value }))
                   }
                   icon={DollarSign}
                 />
                 <FilterDropdown
                   title="Job Type"
-                  options={["Full-time", "Part-time", "Contract", "Freelance"]}
+                  options={["Full-time", "Part-time", "Contract", "Freelance","Internship"]}
                   selected={filters.type}
-                  onSelect={(value) => setFilters({ ...filters, type: value })}
+                  onSelect={(value) => setFilters((prev) => ({ ...prev, type: value }))}
                   icon={Briefcase}
                 />
-                <FilterDropdown
-                  title="Experience"
-                  options={[
-                    "Entry Level",
-                    "Mid Level",
-                    "Senior Level",
-                    "Lead/Principal",
-                  ]}
-                  selected={filters.experience}
-                  onSelect={(value) =>
-                    setFilters({ ...filters, experience: value })
-                  }
-                  icon={GraduationCap}
-                />
+                
+                {/* Remove Filters Button */}
+                {(filters.salary || filters.type || searchTerm) && (
+                  <button
+                    onClick={() => {
+                      setFilters({ salary: "", type: "" });
+                      setSearchTerm("");
+                    }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+                  >
+                    <span className="text-sm font-medium">Remove Filters</span>
+                  </button>
+                )}
               </div>
-
-              {/* Sort */}
-              <FilterDropdown
-                title="Sort by"
-                options={[
-                  "Best Match",
-                  "Most Recent",
-                  "Salary High-Low",
-                  "Company Rating",
-                ]}
-                selected={sortBy}
-                onSelect={setSortBy}
-                icon={Settings}
-              />
             </div>
           </div>
         </section>
 
-        {/* Job Results */}
-        <section className="container mx-auto px-6 lg:px-8 pb-16">
-          <div className="grid gap-6">
-            {jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onLike={handleLike}
-                onShare={handleShare}
-              />
-            ))}
-          </div>
-
-          {/* Load More */}
-          <div className="text-center mt-12">
-            <button className="px-8 py-3 bg-gradient-to-r bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25">
-              Load More Jobs
-            </button>
-          </div>
+        {/* Job Results Section */}
+        <section className="container mx-auto px-6 lg:px-8 pb-16 relative z-10">
+          {isLoading ? (
+            <LoadingSpinner message="Finding the perfect jobs for you..." />
+          ) : (
+            <div className="grid gap-6">
+              {filteredJobs.length === 0 ? (
+                <div className="text-center animate-fade-in-up">
+                  <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-blue-400">
+                    No Jobs Found
+                  </h2>
+                  <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                    Try adjusting your search or filters to find more opportunities.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <p className="text-gray-400">
+                      Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+                      {searchTerm && ` matching "${searchTerm}"`}
+                    </p>
+                  </div>
+                  {filteredJobs.map((job, index) => (
+                    <JobCard
+                      key={job.id || index}
+                      job={job}
+                      onLike={handleLike}
+                      onShare={handleShare}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </section>
       </div>
 
@@ -608,6 +644,73 @@ const JobPage = () => {
               transparent 1px
             );
           background-size: 30px 30px;
+        }
+
+        @keyframes pulse-slow {
+          0%, 100% {
+            opacity: 0.4;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes spin-slow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes spin-slower {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(-360deg);
+          }
+        }
+
+        @keyframes glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.6);
+          }
+        }
+
+        @keyframes float-fade {
+          0%, 100% {
+            transform: translateY(0px);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translateY(-20px);
+            opacity: 1;
+          }
+        }
+
+        .animate-pulse-slow {
+          animation: pulse-slow 3s ease-in-out infinite;
+        }
+
+        .animate-spin-slow {
+          animation: spin-slow 20s linear infinite;
+        }
+
+        .animate-spin-slower {
+          animation: spin-slower 30s linear infinite;
+        }
+
+        .animate-glow {
+          animation: glow 2s ease-in-out infinite;
+        }
+
+        .animate-float-fade {
+          animation: float-fade 4s ease-in-out infinite;
         }
       `}</style>
     </div>

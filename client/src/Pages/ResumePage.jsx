@@ -214,31 +214,6 @@ const ResumePage = () => {
     );
   };
 
-  const CircularProgressSkeleton = () => (
-    <div className="bg-white/5 border border-blue-400/10 p-8 rounded-2xl shadow-xl backdrop-blur-2xl flex flex-col items-center justify-center animate-pulse">
-      <div className="h-6 bg-gray-700 rounded w-40 mb-6"></div>
-      <div className="w-32 h-32 bg-gray-700 rounded-full mb-4"></div>
-      <div className="h-4 bg-gray-700 rounded w-24"></div>
-    </div>
-  );
-
-  const ResumeInfoSkeleton = () => (
-    <div className="bg-white/5 border border-blue-400/10 p-8 rounded-2xl shadow-xl backdrop-blur-2xl animate-pulse">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-gray-700 rounded-lg"></div>
-          <div className="space-y-2">
-            <div className="h-6 bg-gray-700 rounded w-48"></div>
-            <div className="flex items-center gap-4">
-              <div className="h-4 bg-gray-700 rounded w-32"></div>
-              <div className="h-4 bg-gray-700 rounded w-16"></div>
-            </div>
-          </div>
-        </div>
-        <div className="w-40 h-10 bg-gray-700 rounded-lg"></div>
-      </div>
-    </div>
-  );
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];

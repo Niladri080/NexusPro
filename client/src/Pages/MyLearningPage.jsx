@@ -382,7 +382,7 @@ const MyLearningPage = () => {
               </p>
               <button
                 onClick={() => {
-                  toast.info("This feature will be available soon");
+                  navigate("/my-learning/daiy-quiz")
                 }}
                 className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
               >

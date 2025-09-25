@@ -7,6 +7,9 @@ import { Reusme } from "../Models/ResumeModel.js";
 import { Resource } from "../Models/ResourceModel.js";
 import Post from "../Models/PostModel.js";
 import { Skill } from "../Models/SkillModel.js";
+import { Job } from "../Models/JobModel.js";
+import { Ques } from "../Models/QuesModel.js";
+import { DailyUser } from "../Models/DailyUserModel.js";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 let cachedTip = null;
@@ -14,7 +17,7 @@ let cacheTime = 0;
 const CACHE_DURATION = 12 * 60 * 60 * 1000;
 let cachedSuggestions = null;
 let suggestionsCacheTime = 0;
-const SUGGESTIONS_CACHE_DURATION = 12 * 60 * 60 * 1000; 
+const SUGGESTIONS_CACHE_DURATION = 12 * 60 * 60 * 1000;
 let cachedCurrentAffairs = null;
 let currentAffairsCacheTime = 0;
 const CURRENT_AFFAIRS_CACHE_DURATION = 12 * 60 * 60 * 1000;
@@ -191,7 +194,7 @@ export const deleteRoadmap = async (req, res) => {
   try {
     const { userId } = req.body;
     await Roadmap.findOneAndDelete({ userId: userId });
-    await Resource.findOneAndDelete({userId:userId});
+    await Resource.findOneAndDelete({ userId: userId });
     res.status(200).json({ message: "Your roadmap deleted" });
   } catch (err) {
     res.status(500).json({ message: "Data could not be fetched" });
@@ -311,13 +314,24 @@ ${resumeText}`;
     const geminiResponse = result.response.candidates[0].content.parts[0].text;
     const cleaned = geminiResponse.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
-    const skills= parsed.extractedSkills || [];
-    const newSkill=new Skill({
-      userId:userId,
-      skills:skills,
-      location:""
-    })
-    await newSkill.save();
+    const skills = parsed.extractedSkills || [];
+    const existingSkill = await Skill.findOne({ userId });
+    if (existingSkill) {
+      for (let i = 0; i < skills.length; i++) {
+        if (!existingSkill.skills.includes(skills[i])) {
+          existingSkill.skills.push(skills[i]);
+        }
+      }
+      await existingSkill.save();
+    } else {
+      const newSkill = new Skill({
+        userId: userId,
+        skills: skills,
+        role: Role,
+      });
+      await newSkill.save();
+    }
+
     parsed.fileSize = fileSize;
     parsed.fileName = req.file.originalname;
     parsed.suggestion = parsed.suggestion || "";
@@ -392,10 +406,10 @@ export const fetchMyLearning = async (req, res) => {
 };
 export const fetchResources = async (req, res) => {
   try {
-    const { goal,userId } = req.body;
-    const preResult=await Resource.findOne({userId});
-    if (preResult){
-      return res.status(200).json({response:preResult.resource})
+    const { goal, userId } = req.body;
+    const preResult = await Resource.findOne({ userId });
+    if (preResult) {
+      return res.status(200).json({ response: preResult.resource });
     }
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = `
@@ -450,10 +464,10 @@ Now, generate the JSON array based on the user's goal.
     const generatedText = result.response.candidates[0].content.parts[0].text;
     const cleaned = generatedText.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
-    const newResource=new Resource({
-      userId:userId,
-      resource:parsed
-    })
+    const newResource = new Resource({
+      userId: userId,
+      resource: parsed,
+    });
     await newResource.save();
     res.status(200).json({ response: parsed });
   } catch (err) {
@@ -461,61 +475,80 @@ Now, generate the JSON array based on the user's goal.
     res.status(500).json({ message: "Data can't be fetched" });
   }
 };
-export const fetchSteps=async (req,res)=>{
-  
-  try{
-  const {userId}=req.body;
-  const roadMapData=await Roadmap.findOne({userId});
-  if (!roadMapData){
-    return res.status(200).json({current:0,Total:0});
-  }
-  const current =roadMapData.currentIndex;
-  const Total=roadMapData.roadmap.length;
-  return res.status(200).json({current,Total});
-  }
-  catch (err) {
-    console.log(err.message);
-    res.status(500).json({ message: "Data can't be fetched" });
-  }
-}
-export const DashResource=async(req,res)=>{
-  try{
-    const {userId}=req.body;
-    const result=await Resource.findOne({userId});
-    const response=[];
-    for (let i=0;i<6 && i<result.resource.length;i++){
-      response.push(result.resource[i]);
+export const fetchSteps = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const roadMapData = await Roadmap.findOne({ userId });
+    if (!roadMapData) {
+      return res.status(200).json({ current: 0, Total: 0 });
     }
-    res.status(200).json({resource:response})
+    const current = roadMapData.currentIndex;
+    const Total = roadMapData.roadmap.length;
+    return res.status(200).json({ current, Total });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Data can't be fetched" });
   }
-}
+};
+export const DashResource = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const result = await Resource.findOne({ userId });
+    const response = [];
+    for (let i = 0; i < 6 && i < result.resource.length; i++) {
+      response.push(result.resource[i]);
+    }
+    res.status(200).json({ resource: response });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Data can't be fetched" });
+  }
+};
 
 export const CreatePost = async (req, res) => {
   try {
-    const {userId, userName, imgUrl, category, title, content, tags, Comments, Likes, time} = req.body;
+    const {
+      userId,
+      userName,
+      imgUrl,
+      category,
+      title,
+      content,
+      tags,
+      Comments,
+      Likes,
+      time,
+    } = req.body;
     const newPost = new Post({
-      userId, userName, imgUrl, category, title, content, tags, Comments, Likes, time
+      userId,
+      userName,
+      imgUrl,
+      category,
+      title,
+      content,
+      tags,
+      Comments,
+      Likes,
+      time,
     });
     await newPost.save();
-    res.status(201).json({ message: "Post created successfully", post: newPost });
+    res
+      .status(201)
+      .json({ message: "Post created successfully", post: newPost });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Post creation failed" });
   }
-}
-export const fetchPost=async (req,res)=>{
-  try{
-    const allPosts=await Post.find();
-    res.status(200).json({posts:allPosts});
-  }
-  catch (err) {
+};
+export const fetchPost = async (req, res) => {
+  try {
+    const allPosts = await Post.find();
+    res.status(200).json({ posts: allPosts });
+  } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Data can't be fetched" });
   }
-}
+};
 export const toggleLike = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -528,11 +561,11 @@ export const toggleLike = async (req, res) => {
 
     // Check if user already liked the post
     const userLiked = post.LikedBy?.includes(userId);
-    
+
     if (userLiked) {
       // Unlike the post
       post.Likes = Math.max(0, post.Likes - 1);
-      post.LikedBy = post.LikedBy.filter(id => id !== userId);
+      post.LikedBy = post.LikedBy.filter((id) => id !== userId);
     } else {
       // Like the post
       post.Likes += 1;
@@ -545,10 +578,12 @@ export const toggleLike = async (req, res) => {
     await post.save();
 
     res.status(200).json({
-      message: userLiked ? "Post unliked successfully" : "Post liked successfully",
+      message: userLiked
+        ? "Post unliked successfully"
+        : "Post liked successfully",
       post: post,
       isLiked: !userLiked,
-      totalLikes: post.Likes
+      totalLikes: post.Likes,
     });
   } catch (err) {
     console.log(err.message);
@@ -572,11 +607,11 @@ export const addComment = async (req, res) => {
     }
 
     const newComment = {
-      by: by || 'Anonymous',
-      byimg: byimg || '',
-      byId: byId || 'Unknown',
+      by: by || "Anonymous",
+      byimg: byimg || "",
+      byId: byId || "Unknown",
       comment: comment.trim(),
-      time: Date.now().toString()
+      time: Date.now().toString(),
     };
 
     post.Comments.push(newComment);
@@ -585,7 +620,7 @@ export const addComment = async (req, res) => {
     res.status(201).json({
       message: "Comment added successfully",
       comment: newComment,
-      post: post
+      post: post,
     });
   } catch (err) {
     console.log(err.message);
@@ -605,7 +640,9 @@ export const deletePost = async (req, res) => {
 
     // Check if user is the post owner
     if (post.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized: You can only delete your own posts" });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized: You can only delete your own posts" });
     }
 
     await Post.findByIdAndDelete(postId);
@@ -632,10 +669,233 @@ export const getPostDetails = async (req, res) => {
       post: post,
       isLiked: isLiked,
       totalLikes: post.Likes,
-      totalComments: post.Comments.length
+      totalComments: post.Comments.length,
     });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Failed to fetch post details" });
   }
+};
+export const findJobs = async (req, res) => {
+  const { location, userId, role, remote, jobType } = req.body;
+  try {
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(
+      role
+    )}%20in%20${encodeURIComponent(location)}`;
+    const options = {
+      method: "GET",
+      headers: {
+        "X-RapidAPI-Key": process.env.X_RAPIDAPI_KEY,
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+      },
+    };
+    const response = await fetch(url, options);
+    const data = await response.json();
+    const skill = await Skill.findOne({ userId });
+    const userSkillsString = JSON.stringify(skill?.skills || []);
+    const rawJobDataString = JSON.stringify(data.data, null, 2);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `**Role:** You are an intelligent job data processing engine. Your task is to act as a smart job matching algorithm that transforms a raw JSON array of job listings into a refined, user-centric JSON array.
+
+**Task:** Analyze the provided raw job data and the user's profile. For each job, you must calculate a 'matchScore' and extract key information, formatting it exactly as specified.
+
+---
+
+### User Profile for Matching:
+- **Desired Role:** "${role}"
+- **Current Skills:** ${userSkillsString}
+- **Location:** "${location}"
+- **jobType:** "${jobType}" (This may include Full-time,Part-time,internship,Contract or FreeLance or it can be all types)
+- **include-remote-jobs:** "${remote}"
+---
+
+### Instructions for Processing:
+
+1.  **Parse the Raw Job Data:** Analyze each job object in the provided JSON data.
+2.  **Extract and Transform:** For each job, create a new object that strictly follows the **Output JSON Schema**.
+3.  **Calculate Match Score:** This is the most critical step. Follow these rules precisely:
+    * **If User Skills are provided (the array is not empty):** The score is primarily based on the overlap between the user's skills and the skills listed in the job's qualifications.
+        * High overlap (e.g., 75%+) should result in a score of 85-95.
+        * Moderate overlap (e.g., 40-75%) should result in a score of 70-84.
+        * Low overlap (e.g., <40%) should result in a score of 50-69.
+    * **If User Skills are NOT provided (the array is empty):** The score should be based on how closely the job title ('job_title') matches the user's desired role. Also, consider location as a minor factor.
+        * A very close title match (e.g., "Senior AI Engineer" vs "AI Engineer") should be 80-90.
+        * A related but different role (e.g., "Data Scientist" vs "AI Engineer") should be 60-75.
+    * **Add a bonus of +5 to the score if 'job_is_remote' is true.**
+4.  **Generate a Concise Description:** Summarize the 'job_description' into a short, engaging sentence (max 30 words).
+5.  **Extract Skills:** Identify and list the key technical skills (programming languages, frameworks, tools) from the 'job_description' and 'job_highlights.Qualifications'.
+6. **Format Salary (Normalize to USD):**
+    * Always convert the salary to USD, regardless of the job's original currency.
+    * Conversion rules:
+        - Assume approximate rates:
+          * 1 INR = 0.012 USD
+          * 1 EUR = 1.1 USD
+          * 1 GBP = 1.25 USD
+          * If an unknown currency is encountered, leave the values as-is but still append "USD".
+    * If 'job_salary_period' is 'YEAR', format as "$[min/1000]k - $[max/1000]k / year".
+    * If 'job_salary_period' is 'MONTH', first annualize (×12) and then format as yearly in USD.
+    * If 'job_salary_period' is 'HOUR', format as "$[min] - $[max] / hour".
+    * If salary data is null, use the string "Not Disclosed"
+7.  **Generate Placeholders:** For 'rating' and 'reviews', generate plausible integer values as this data is not in the source. Rating should be between 3 and 5. Reviews should be between 50 and 300.
+
+---
+
+### Output JSON Schema (Strictly Enforce This):
+\`\`\`json
+[
+  {
+    "id": "integer",(starting from 1)
+    "title": "string",
+    "company": "string",
+    "location": "string",
+    "remote": "boolean",
+    "salary": "string",
+    "type": "string",
+    "rating": "integer",
+    "reviews": "integer",
+    "matchScore": "integer",
+    "postedTime": "string",
+    "description": "string",
+    "link": "string",
+    "skills": ["string"]
+  }
+]
+\`\`\`
+**CRITICAL:** Your final output must be ONLY the JSON array, with no surrounding text, explanations, or markdown formatting like \`\`\`json.
+
+---
+
+### Raw Job Data for Analysis:
+${rawJobDataString}
+`;
+    const result = await model.generateContent(prompt);
+    const generatedText = result.response.candidates[0].content.parts[0].text;
+    const cleaned = generatedText.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    await Job.deleteMany({ userId });
+    const newJob = new Job({
+      userId: userId,
+      job: parsed,
+    });
+    await newJob.save();
+    res.status(200).json({ response: parsed });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to fetch post details" });
+  }
+};
+export const fetchJobs = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const jobs = await Job.find({ userId: userId });
+    res.status(200).json({ jobs: jobs });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to fetch post details" });
+  }
+};
+export const fetchQuestion = async (req, res) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `**Role:** You are an AI expert tasked with creating daily technical quizzes for a community of software developers and tech enthusiasts.
+
+**Task:** Generate a single, high-quality Multiple Choice Question (MCQ) on a relevant and interesting technical topic. The output must be a single, valid JSON object and nothing else.
+
+**Instructions:**
+1.  **Question:** Formulate a clear and concise question about a concept in software engineering, programming languages, web development, data structures, or algorithms.
+2.  **Options:** Provide exactly four possible answers. One must be correct, and the other three should be plausible but incorrect distractors.
+3.  **Correct Answer:** Identify the correct option using its 0-based index (i.e., 0 for the first option, 1 for the second, and so on).
+4.  **Explanation:** Write a brief, clear explanation (under 30 words) detailing why the correct answer is right.
+5.  **Format:** Ensure the final output is only the JSON object, with no additional text or markdown formatting.
+
+**JSON Output Structure:**
+\`\`\`json
+{
+  "question": "string",
+  "options": [
+    "string",
+    "string",
+    "string",
+    "string"
+  ],
+  "correctAnswer": "integer",
+  "explanation": "string",
+  "topic": "string"
 }
+\`\`\`
+`;
+    const result = await model.generateContent(prompt);
+    const generatedText = result.response.candidates[0].content.parts[0].text;
+    const cleaned = generatedText.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    await Ques.deleteMany({});
+    const newQuestion = new Ques({
+      question: parsed.question,
+      options: parsed.options,
+      correctAnswer: parsed.correctAnswer,
+      explanation: parsed.explanation,
+      topic: parsed.topic,
+      answeredBy:[],
+    });
+    await newQuestion.save();
+    res.status(200).json({ response: parsed });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to fetch post details" });
+  }
+};
+export const DailyQuestion = async (req, res) => {
+  try {
+    const {userId} = req.body;
+    const questions = await Ques.find({});
+    console.log(questions)
+    let contain=false;
+    for (let i=0;i<questions[0].answeredBy.length;i++){
+      if (questions[0].answeredBy[i]===userId){
+        contain=true;
+        break;
+      }
+    }
+    res.status(200).json({alreadyAnswered:contain, questions: questions });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Failed to fetch post details" });
+  }
+};
+export const SubmitDaily = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const existingUser = await DailyUser.findOne({ userId: userId });
+    if (!existingUser) {
+      const newUser = new DailyUser({
+        userId: userId,
+        lastAnsweredDate: new Date().toISOString().slice(0, 10),
+      });
+      await newUser.save();
+      const question = await Ques.findOne({});
+      question[0].answeredBy.push(userId);
+      await question[0].save();
+      return res.status(200);
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .slice(0, 10);
+      const user = existingUser;
+    if (user.lastAnsweredDate === today) {
+    } else if (user.lastAnsweredDate === yesterday) {
+      user.currentStreak += 1;
+      user.lastAnsweredDate = today;
+    } else {
+      user.currentStreak = 1;
+      user.lastAnsweredDate = today;
+    }
+    await user.save();
+    const question = await Ques.findOne({});
+    question[0].answeredBy.push(userId);
+    await question[0].save();
+    res.status(200).json({ message: "Daily quiz submitted", streak: user.currentStreak });;
+  } catch (err) {
+    res.status(500).json({ message: "Request failed" });
+  }
+};

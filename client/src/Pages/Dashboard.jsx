@@ -84,14 +84,14 @@ const ModernJobCard = ({ job }) => (
     <div className="absolute top-4 right-4 z-10">
       <div
         className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-          job.match >= 90
+          job.matchScore >= 90
             ? "bg-green-500/20 text-green-300 border border-green-500/30"
             : job.match >= 80
             ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
             : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
         }`}
       >
-        {job.match}% match
+        {job.matchScore}% match
       </div>
     </div>
 
@@ -114,7 +114,7 @@ const ModernJobCard = ({ job }) => (
             </span>
             <span className="flex items-center">
               <Clock className="w-3 h-3 mr-1" />
-              {job.posted}
+              {job.postedTime}
             </span>
           </div>
         </div>
@@ -145,13 +145,12 @@ const ModernJobCard = ({ job }) => (
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <button className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all duration-300">
-            <Bookmark className="w-4 h-4" />
-          </button>
-          <button className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all duration-300">
             <ExternalLink className="w-4 h-4" />
           </button>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/25">
+        <button onClick={()=>{
+          window.open(job.link,"_blank")
+        }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/25">
           Apply Now
         </button>
       </div>
@@ -391,7 +390,7 @@ const Dashboard = () => {
   const [loadingResume, setLoadingResume] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false);
-
+  const [jobRecommendations,setjobRecommendations]=useState([]);
   // Helper function to safely parse JSON from API responses
   const parseApiResponse = (rawMessage) => {
     try {
@@ -519,38 +518,18 @@ const Dashboard = () => {
       toast.error("Error while loading resources");
     })
   },[user, location.pathname])
-  const jobRecommendations = [
-    {
-      title: "Senior Frontend Developer",
-      company: "TechFlow Inc.",
-      location: "San Francisco",
-      posted: "2 days ago",
-      match: 92,
-      description:
-        "Looking for an experienced developer to lead our React team and build scalable user interfaces using modern technologies and best practices.",
-      skills: ["React", "TypeScript", "Node.js", "AWS", "GraphQL"],
-    },
-    {
-      title: "Full Stack Engineer",
-      company: "StartupXYZ",
-      location: "Remote",
-      posted: "1 week ago",
-      match: 87,
-      description:
-        "Join our fast-growing startup as a full-stack engineer working with React, Node.js, and AWS to build revolutionary products.",
-      skills: ["React", "Node.js", "AWS", "Docker", "PostgreSQL"],
-    },
-    {
-      title: "Product Engineer",
-      company: "InnovateLabs",
-      location: "New York",
-      posted: "3 days ago",
-      match: 84,
-      description:
-        "Bridge the gap between product and engineering in our mission to revolutionize fintech with cutting-edge technology solutions.",
-      skills: ["Python", "React", "Kubernetes", "Microservices"],
-    },
-  ];
+   useEffect(() => {
+    if (!user?.id) return;
+    axios.post("http://localhost:4000/api/home/fetch-jobs", { userId: user.id })
+      .then((res) => {
+        console.log(res.data.jobs[0].job);
+        setjobRecommendations(res.data.jobs[0].job);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Something went wrong. Try again later");
+      })
+  }, [user,location.pathname]);
   return (
     <>
       <div className="bg-[#0a0a0c] text-white font-sans overflow-hidden relative min-h-screen">
@@ -768,7 +747,7 @@ const Dashboard = () => {
                 Job Recommendations
               </h3>
               <div className="grid md:grid-cols-2 gap-8">
-                {jobRecommendations.map((job, idx) => (
+                {jobRecommendations.slice(0,4).map((job, idx) => (
                   <ModernJobCard key={idx} job={job} />
                 ))}
               </div>

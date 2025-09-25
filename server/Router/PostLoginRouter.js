@@ -17,15 +17,19 @@ import {
   aiSuggestions,
   CreatePost,
   currentAffairs,
+  DailyQuestion,
   DashResource,
   deletePost,
   deleteRoadmap,
+  fetchJobs,
   fetchMyLearning,
   fetchPost,
+  fetchQuestion,
   fetchResources,
   fetchResume,
   fetchRoadmap,
   fetchSteps,
+  findJobs,
   get_tip,
   getPostDetails,
   getUserRoadmap,
@@ -59,5 +63,8 @@ router.post("/like-post/:postId", toggleLike);
 router.post("/add-comment/:postId", addComment);
 router.get("/post-details/:postId", getPostDetails);
 router.delete('/delete-post/:postId', deletePost); 
-
+router.post("/get-jobs",findJobs)
+router.post("/fetch-jobs",fetchJobs)
+router.get("/daily-question",fetchQuestion)
+router.post("/fetch-daily",DailyQuestion)
 export default router;

@@ -24,6 +24,7 @@ import RoadmapPage from "./Pages/RoadmapPage";
 import ResourcesPage from "./Pages/ResourcesPage";
 import CommunityForum from "./Pages/CommunityPage";
 import JobPage from "./Pages/JobPage";
+import DailyQuiz from "./Pages/DailyQuiz";
 
 function App() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -112,6 +113,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <JobPage/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-learning/daiy-quiz"
+            element={
+              <ProtectedRoute>
+                <DailyQuiz/>
               </ProtectedRoute>
             }
           />
