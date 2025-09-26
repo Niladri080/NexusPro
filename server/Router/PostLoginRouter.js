@@ -28,6 +28,7 @@ import {
   fetchResources,
   fetchResume,
   fetchRoadmap,
+  FetchStats,
   fetchSteps,
   findJobs,
   get_tip,
@@ -37,6 +38,8 @@ import {
   ResubmitResume,
   RoadmapGen,
   SaveRoadmap,
+  SubmitDaily,
+  submitWrong,
   toggleLike,
   uploadResume,
 } from "../Controllers/PostLoginController.js";
@@ -67,4 +70,7 @@ router.post("/get-jobs",findJobs)
 router.post("/fetch-jobs",fetchJobs)
 router.get("/daily-question",fetchQuestion)
 router.post("/fetch-daily",DailyQuestion)
+router.post("/submit-right",SubmitDaily)
+router.post("/submit-wrong",submitWrong)
+router.post("/fetch-stats",FetchStats);
 export default router;

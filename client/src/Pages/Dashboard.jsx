@@ -482,7 +482,7 @@ const Dashboard = () => {
           setcompletedSteps(res.data.current);
         })
         .catch((err) => {
-          toast.error("Error while fetching data");
+          console.log("Error occured while fetching data");
         })
         .finally(() => {
           setLoadingRoadmap(false);
@@ -501,7 +501,7 @@ const Dashboard = () => {
         setresumeScore(res.data.atsScore);
       })
       .catch((err) => {
-        toast.error("Error occured while fetching data");
+       console.log("Error occured while fetching data");
       })
       .finally(() => {
         setLoadingResume(false);
@@ -527,13 +527,11 @@ const Dashboard = () => {
       })
       .catch((err) => {
         console.log(err);
-        toast.error("Something went wrong. Try again later");
       })
   }, [user,location.pathname]);
   return (
     <>
       <div className="bg-[#0a0a0c] text-white font-sans overflow-hidden relative min-h-screen">
-        {/* Background elements matching landing page */}
         <div
           className="absolute inset-0 bg-cover bg-fixed opacity-10"
           style={{
@@ -695,39 +693,7 @@ const Dashboard = () => {
                   </button>
                 </div>
               )}
-            </section>
-
-            {/* Weekly Progress */}
-            <section>
-              <h3 className="text-2xl font-bold mb-6 flex items-center">
-                <BarChart3 className="w-6 h-6 mr-3 text-blue-400" />
-                This Week
-              </h3>
-              <div className="bg-[#1c1c1c] p-8 rounded-2xl border border-gray-700/50 space-y-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Study Hours</span>
-                  <span className="text-white font-semibold text-lg">
-                    12.5h
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Tasks Completed</span>
-                  <span className="text-white font-semibold text-lg">
-                    {completedSteps} / {totalSteps}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Applications Sent</span>
-                  <span className="text-white font-semibold text-lg">3</span>
-                </div>
-                <div className="pt-4 border-t border-gray-700">
-                  <div className="flex items-center justify-center space-x-2 text-green-400">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="text-sm">+20% from last week</span>
-                  </div>
-                </div>
-              </div>
-            </section>
+            </section>           
           </div>
 
           {/* AI Suggestions Carousel */}
@@ -747,9 +713,10 @@ const Dashboard = () => {
                 Job Recommendations
               </h3>
               <div className="grid md:grid-cols-2 gap-8">
-                {jobRecommendations.slice(0,4).map((job, idx) => (
+                {jobRecommendations.length>0 && jobRecommendations.slice(0,4).map((job, idx) => (
                   <ModernJobCard key={idx} job={job} />
                 ))}
+              {jobRecommendations.length==0 && <p className='text-blue-500 mt-10'>No Recommendations Found</p>  }
               </div>
             </section>
 

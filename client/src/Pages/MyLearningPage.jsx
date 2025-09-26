@@ -41,18 +41,19 @@ const MyLearningPage = () => {
   const [loading, setLoading] = useState(true);
   const [roadmapSteps, setroadmapSteps] = useState([]);
   const [currentIndex, setcurrentIndex] = useState(-1);
+  const [userData,setuserData]=useState({});
   useEffect(() => {
     axios
       .post("http://localhost:4000/api/home/fetch-roadmap", {
         userId: user.id,
       })
       .then((res) => {
-        setroadmapSteps(res.data.roadmap);
-        setcurrentIndex(res.data.currentIndex);
+        if (res.data.success){
+          setroadmapSteps(res.data.roadmap);
+          setcurrentIndex(res.data.currentIndex);
+        } 
       })
-      .catch((err) => {
-        toast.error("Error ocurred while fetching data");
-      });
+      .catch((err) => {});
   }, [location.pathname, user]);
 
   useEffect(() => {
@@ -69,41 +70,36 @@ const MyLearningPage = () => {
         setLoading(false);
       })
       .catch((err) => {
-        toast.error("Error occured while fetching data");
         setLoading(false);
       });
   }, [user, location.pathname]);
-  const userData = {
-    name: "Alex Johnson",
-    chosenCareerPath: "AI Engineer",
-    roadmapProgress: 70,
-    resumeScore: 78,
-    completedLessons: 24,
-    totalLessons: 40,
-    streak: 12,
-    badges: 5,
-    weeklyGoal: 85,
-  };
-
+  useEffect(()=>{
+    axios.post("http://localhost:4000/api/home/fetch-stats",{
+      userId:user.id
+    })
+    .then((res)=>{
+      setuserData({
+        streak:res.data.streak,
+        completedLessons:res.data.curr,
+        totalLessons:res.data.total
+      })
+    })
+    .catch((err)=>{
+      console.log(err.message)
+    })
+  },[user,location.pathname])
   const statistics = [
     {
       icon: Flame,
       title: "Day Streak",
-      value: userData.streak,
+      value: userData?userData.streak:0,
       color: "text-orange-400",
       bgColor: "bg-orange-400/10",
     },
     {
-      icon: Target,
-      title: "Weekly Goal",
-      value: `${userData.weeklyGoal}%`,
-      color: "text-green-400",
-      bgColor: "bg-green-400/10",
-    },
-    {
       icon: TrendingUp,
       title: "Lessons Completed",
-      value: `${userData.completedLessons}/${userData.totalLessons}`,
+      value: `${userData?userData.completedLessons:0}/${userData?userData.totalLessons:0}`,
       color: "text-blue-400",
       bgColor: "bg-blue-400/10",
     },
@@ -238,7 +234,7 @@ const MyLearningPage = () => {
                   </p>
                 )}
                 <p className="text-gray-400 mt-4">
-                  {hasRoadmap && "Keep going! You're doing great."}
+                  {hasRoadmap && currentIndex>0?"Keep going! You're doing great.":"Start your journey!"}
                 </p>
                 {!hasRoadmap && !loading && (
                   <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 mt-8">
@@ -318,7 +314,10 @@ const MyLearningPage = () => {
             </h2>
 
             <div className="space-y-4">
-              {roadmapSteps.slice(0, 4).map((step, index) => (
+              {roadmapSteps.length === 0 && (
+                <p className="text-gray-400">No roadmap steps found.</p>
+              )}
+              {roadmapSteps.length>0 && roadmapSteps.slice(0, 4).map((step, index) => (
                 <div
                   key={step.id}
                   className={`p-6 rounded-xl border transition-all duration-300 ${
@@ -361,7 +360,7 @@ const MyLearningPage = () => {
               ))}
             </div>
 
-            <div className="text-center mt-8">
+            {roadmapSteps.length>4 && <div className="text-center mt-8">
               <button
                 onClick={() => {
                   navigate("/generate-roadmap");
@@ -370,7 +369,7 @@ const MyLearningPage = () => {
               >
                 View Complete Roadmap
               </button>
-            </div>
+            </div>}
           </div>
 
           {/* Quick Actions */}

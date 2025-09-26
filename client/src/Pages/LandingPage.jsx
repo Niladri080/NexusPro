@@ -8,7 +8,7 @@ import Features from "../Components/Features";
 import Footer from "../Components/Footer";
 import { useAuth } from "@clerk/clerk-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Loader from "../Components/Loader";
+import RiseLoaderWrapper from "../Components/RiseLoader";
 
 const JobSuggestion = ({ title, company }) => (
   <div className="flex justify-between items-center py-3 px-3 -mx-3 rounded-md hover:bg-gray-800 transition-colors duration-200 cursor-pointer group">
@@ -29,7 +29,6 @@ const LandingPage = () => {
   const featuresRef = useRef(null);
   const howRef = useRef(null);
 
-  // Add these handlers
   const handleFeaturesClick = () => {
     featuresRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -38,7 +37,6 @@ const LandingPage = () => {
   };
 
   useEffect(() => {
-    if (!isLoaded) return; // Wait for Clerk to load before running logic
     setLoading(true);
     if (isSignedIn) {
       navigate("/dashboard");
@@ -49,7 +47,7 @@ const LandingPage = () => {
 
   // ✅ Now we just conditionally render inside the return
   if (!isLoaded || loading) {
-    return <Loader />;
+    return <RiseLoaderWrapper/>;
   }
   return (
     <div className="bg-[#0a0a0c] text-white font-sans overflow-hidden relative">

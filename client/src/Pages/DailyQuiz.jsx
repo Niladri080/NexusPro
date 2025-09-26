@@ -1,45 +1,87 @@
 import React, { useState, useEffect } from "react";
-import { HelpCircle, CheckCircle, X, Trophy, Clock } from "lucide-react";
+import { HelpCircle, CheckCircle, X, Trophy, Clock, ArrowLeft } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
 const DailyQuiz = () => {
   const {user}=useUser();
+  const navigate=useNavigate();
   const location=useLocation();
   const [selectedOption, setSelectedOption] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [quizData,setquizData]=useState({});
+  const [userStreak,setUserStreak]=useState();
+  
   useEffect(()=>{
     axios.post("http://localhost:4000/api/home/fetch-daily",{
       userId:user.id
     })
     .then((res)=>{
-      setHasAnswered(res.data.hasAnswered);
+      if (res.data && res.data.streak !== undefined) {
+    setUserStreak(res.data.streak);
+  }
+      setHasSubmitted(res.data.hasAnswered);
       setquizData(res.data.questions[0]);
     })
     .catch(err=>{
-      setHasAnswered(true);
+      setHasSubmitted(true);
       toast.error("Error while loading daily question");
     })
   },[user,location.pathname])
-  const handleOptionClick = (optionIndex) => {
-    if (hasAnswered) return;
-    
-    setSelectedOption(optionIndex);
-    setIsCorrect(optionIndex === quizData.correctAnswer);
-    setShowResult(true);
-    setHasAnswered(true);
-  };
+  
+  const handleRightAnswer = () => {
+  axios.post("http://localhost:4000/api/home/submit-right", {
+    userId: user.id
+  })
+  .then(res => {
+    if (res.data && res.data.streak !== undefined) {
+      setUserStreak(res.data.streak);
+      toast.success("Right answer submitted successfully");
+    }
+  })
+  .catch(err => {
+    console.error("Submit right answer error:", err);
+    toast.error("Error while submitting your answer");
+  });
+};
 
-  const resetQuiz = () => {
-    setSelectedOption(null);
-    setShowResult(false);
-    setIsCorrect(false);
-    setHasAnswered(false);
+const handleWrongAnswer = () => {
+  axios.post("http://localhost:4000/api/home/submit-wrong", {
+    userId: user.id
+  })
+  .then(res => {
+    if (res.data && res.data.streak !== undefined) {
+      setUserStreak(res.data.streak);
+      toast.success("Wrong answer, Come back tomorrow");
+    }
+  })
+  .catch(err => {
+    console.error("Submit wrong answer error:", err);
+    toast.error("Error while submitting your answer");
+  });
+};
+
+  const handleOptionClick = (optionIndex) => {
+  if (hasAnswered) return;
+  const correct = optionIndex === quizData.correctAnswer;
+  setSelectedOption(optionIndex);
+  setIsCorrect(correct);
+  setShowResult(true);
+  setHasAnswered(true);
+  if (correct) {
+    handleRightAnswer();
+  } else {
+    handleWrongAnswer();
+  }
+};
+
+  const handleReturnToLearning = () => {
+    navigate('/my-learning'); // Adjust the path to match your learning page route
   };
 
   const getOptionClass = (optionIndex) => {
@@ -72,6 +114,17 @@ const DailyQuiz = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none z-0"></div>
 
       <div className="relative z-10 container mx-auto px-6 lg:px-8 py-12">
+        {/* Return Button */}
+        <div className="mb-8">
+          <button
+            onClick={handleReturnToLearning}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1c1c1c] border border-gray-700/50 rounded-lg hover:border-blue-500 hover:bg-gray-800/50 transition-all duration-300 text-gray-300 hover:text-blue-400"
+          >
+            <ArrowLeft size={18} />
+            Return to Learning
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -101,16 +154,18 @@ const DailyQuiz = () => {
                 </div>
               </div>
             </div>
-
-            {/* Question */}
-            <div className="mb-8">
+            {!hasSubmitted && <div className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-200 leading-relaxed">
                 {quizData.question}
               </h2>
-            </div>
+            </div>}
 
-            {/* Options */}
-            <div className="space-y-4 mb-8">
+            {hasSubmitted && <div className="mb-8">
+             <h2 className="text-2xl font-semibold text-gray-200 leading-relaxed">
+                Submitted Daily Question. Come back tommorow
+              </h2>
+            </div>}
+            {!hasSubmitted && <div className="space-y-4 mb-8">
               {quizData.options?.map((option, index) => (
                 <div
                   key={index}
@@ -145,8 +200,9 @@ const DailyQuiz = () => {
                   </div>
                 </div>
               ))}
+               
             </div>
-
+}
             {/* Result Message */}
             {showResult && (
               <div className="animate-fade-in-up">
@@ -184,12 +240,13 @@ const DailyQuiz = () => {
 
               </div>
             )}
+
           </div>
 
           {/* Stats Section */}
           <div className="grid grid-cols-1 gap-6 mt-8">
             <div className="bg-[#1c1c1c] rounded-xl border border-gray-700/50 p-6 text-center">
-              <div className="text-3xl font-bold text-green-400 mb-2">-</div>
+              <div className="text-3xl font-bold text-green-400 mb-2">{userStreak==0?'-':userStreak}</div>
               <div className="text-gray-400">Current Streak</div>
             </div>
           </div>

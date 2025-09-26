@@ -249,17 +249,17 @@ const JobPage = () => {
 
   // Initial job fetch
   useEffect(() => {
-    if (!user?.id) return;
-    
+    if (!user?.id) return; 
     setIsInitialLoading(true);
     axios.post("http://localhost:4000/api/home/fetch-jobs", { userId: user.id })
       .then((res) => {
-        console.log(res.data.jobs[0].job);
-        setJobs(res.data.jobs[0].job);
+        if (res.data.success){
+          console.log(res.data.jobs[0].job);
+          setJobs(res.data.jobs[0].job);
+        }
       })
       .catch((err) => {
         console.log(err);
-        toast.error("Something went wrong. Try again later");
       })
       .finally(() => {
         setIsInitialLoading(false);
@@ -285,7 +285,6 @@ const JobPage = () => {
       })
       .catch((err) => {
         console.log(err);
-        toast.error("Something went wrong. Try again later");
       })
       .finally(() => {
         setIsLoading(false);

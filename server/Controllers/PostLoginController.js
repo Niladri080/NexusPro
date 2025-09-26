@@ -153,6 +153,7 @@ export const SaveRoadmap = async (req, res) => {
       roadmap: roadmap,
     });
     await newData.save();
+    await Resource.findOneAndDelete({ userId: user.id });
     res.status(200).json({ success: true });
   } catch (err) {
     console.log(err.message);
@@ -163,9 +164,10 @@ export const fetchRoadmap = async (req, res) => {
     const { userId } = req.body;
     const results = await Roadmap.findOne({ userId: userId });
     if (!results) {
-      return res.status(500).json({ message: "Can't find details" });
+      return res.status(200).json({ success:false,message: "Can't find details" });
     }
     res.status(200).json({
+      success:true,
       roadmap: results.roadmap,
       currentIndex: results.currentIndex,
       hasCompleted: results.hasCompleted,
@@ -181,9 +183,8 @@ export const getUserRoadmap = async (req, res) => {
     const roadmap = await Roadmap.findOne({ userId });
 
     if (!roadmap) {
-      return res.status(404).json({ message: "No roadmap found" });
+      return res.status(200).json({ message: "No roadmap found" });
     }
-
     res.status(200).json(roadmap);
   } catch (err) {
     console.error("Error fetching roadmap:", err);
@@ -239,7 +240,6 @@ export const markComplete = async (req, res) => {
     res.status(500).json({ message: "Could not mark step as completed" });
   }
 };
-// ...existing imports and code...
 
 export const uploadResume = async (req, res) => {
   try {
@@ -359,7 +359,7 @@ export const fetchResume = async (req, res) => {
     const { userId } = req.body;
     const resume = await Reusme.findOne({ userId });
     if (!resume) {
-      return res.status(404).json({ message: "No resume found" });
+      return res.status(202).json({success:false, message: "No resume found" });
     }
     res.status(200).json(resume);
   } catch (err) {
@@ -552,7 +552,7 @@ export const fetchPost = async (req, res) => {
 export const toggleLike = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { userId, userName } = req.body;
+    const { userId } = req.body;
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -788,7 +788,10 @@ export const fetchJobs = async (req, res) => {
   try {
     const { userId } = req.body;
     const jobs = await Job.find({ userId: userId });
-    res.status(200).json({ jobs: jobs });
+    if (!jobs) {
+      return res.status(200).json({success:false, message: "Can't find details" });
+    }
+    res.status(200).json({success:true, jobs: jobs });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Failed to fetch post details" });
@@ -835,7 +838,7 @@ export const fetchQuestion = async (req, res) => {
       correctAnswer: parsed.correctAnswer,
       explanation: parsed.explanation,
       topic: parsed.topic,
-      answeredBy:[],
+      answeredBy: [],
     });
     await newQuestion.save();
     res.status(200).json({ response: parsed });
@@ -846,56 +849,130 @@ export const fetchQuestion = async (req, res) => {
 };
 export const DailyQuestion = async (req, res) => {
   try {
-    const {userId} = req.body;
+    const { userId } = req.body;
     const questions = await Ques.find({});
-    console.log(questions)
-    let contain=false;
-    for (let i=0;i<questions[0].answeredBy.length;i++){
-      if (questions[0].answeredBy[i]===userId){
-        contain=true;
-        break;
-      }
+    
+    if (questions.length === 0) {
+      return res.status(404).json({ message: "No questions available" });
     }
-    res.status(200).json({alreadyAnswered:contain, questions: questions });
+    
+    const hasAnswered = questions[0].answeredBy.includes(userId);
+    
+    const user = await DailyUser.findOne({ userId: userId });
+    let streak = 0;
+    if (user) {
+      streak = user.currentStreak;
+    }
+    
+    res.status(200).json({ 
+      hasAnswered: hasAnswered, 
+      questions: questions, 
+      streak: streak 
+    });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Failed to fetch post details" });
   }
 };
+
 export const SubmitDaily = async (req, res) => {
   try {
     const { userId } = req.body;
+    
+    // Add user to answered list first
+    const question = await Ques.findOne({});
+    if (question && !question.answeredBy.includes(userId)) {
+      question.answeredBy.push(userId);
+      await question.save();
+    }
+    
+    const existingUser = await DailyUser.findOne({ userId: userId });
+    
+    if (!existingUser) {
+      const newUser = new DailyUser({
+        userId: userId,
+        lastAnsweredDate: new Date().toISOString().slice(0, 10),
+        currentStreak: 1
+      });
+      await newUser.save();
+      return res.status(200).json({ message: "User created", streak: 1 });
+    }
+    
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .slice(0, 10);
+    
+    if (existingUser.lastAnsweredDate === today) {
+      // Already answered today
+      return res.status(200).json({ 
+        message: "Already answered today", 
+        streak: existingUser.currentStreak 
+      });
+    } else if (existingUser.lastAnsweredDate === yesterday) {
+      existingUser.currentStreak += 1;
+      existingUser.lastAnsweredDate = today;
+    } else {
+      existingUser.currentStreak = 1;
+      existingUser.lastAnsweredDate = today;
+    }
+    
+    await existingUser.save();
+    
+    res.status(200).json({ 
+      message: "Daily quiz submitted", 
+      streak: existingUser.currentStreak 
+    });
+  } catch (err) {
+    console.error("SubmitDaily error:", err);
+    res.status(500).json({ message: "Request failed" });
+  }
+};
+export const submitWrong = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const question = await Ques.findOne({});
+    
+    if (question && !question.answeredBy.includes(userId)) {
+      question.answeredBy.push(userId);  
+      await question.save();
+    }
     const existingUser = await DailyUser.findOne({ userId: userId });
     if (!existingUser) {
       const newUser = new DailyUser({
         userId: userId,
         lastAnsweredDate: new Date().toISOString().slice(0, 10),
+        currentStreak: 0,
       });
       await newUser.save();
-      const question = await Ques.findOne({});
-      question[0].answeredBy.push(userId);
-      await question[0].save();
-      return res.status(200);
+      return res.status(200).json({ message: "User created", streak: 0 });
     }
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000)
-      .toISOString()
-      .slice(0, 10);
-      const user = existingUser;
-    if (user.lastAnsweredDate === today) {
-    } else if (user.lastAnsweredDate === yesterday) {
-      user.currentStreak += 1;
-      user.lastAnsweredDate = today;
-    } else {
-      user.currentStreak = 1;
-      user.lastAnsweredDate = today;
-    }
-    await user.save();
-    const question = await Ques.findOne({});
-    question[0].answeredBy.push(userId);
-    await question[0].save();
-    res.status(200).json({ message: "Daily quiz submitted", streak: user.currentStreak });;
+    
+    existingUser.currentStreak = 0;
+    existingUser.lastAnsweredDate = new Date().toISOString().slice(0, 10);
+    await existingUser.save();
+    
+    res.status(200).json({ 
+      message: "Submitted", 
+      streak: existingUser.currentStreak 
+    });
   } catch (err) {
+    console.error("submitWrong error:", err);
     res.status(500).json({ message: "Request failed" });
   }
 };
+export const FetchStats=async (req,res)=>{
+  try {
+    const { userId } = req.body;
+    const user = await DailyUser.findOne({ userId: userId });
+    const roadmap=await Roadmap.findOne({userId:userId});
+    res.status(200).json({
+      streak: user?user.currentStreak:0,
+      curr:roadmap?roadmap.currentIndex:0,
+      total:roadmap?roadmap.roadmap.length:0,
+    });
+  } catch (err) {
+    console.error("FetchStats error:", err);
+    res.status(500).json({ message: "Request failed" });
+  }
+}
