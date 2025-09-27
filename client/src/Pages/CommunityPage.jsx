@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import PostHeader from '../Components/PostHeader';
 import { useUser } from '@clerk/clerk-react';
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

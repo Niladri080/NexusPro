@@ -29,7 +29,7 @@ const ResumePage = () => {
   const [resumeData, setresumeData] = useState({});
   const [suggestion, setsuggestion] = useState("");
   const [isLoading, setisLoading] = useState(true);
-  const API_URL=process.env.REACT_APP_API_URL
+  const API_URL = import.meta.env.VITE_API_URL;
   // Fetch resume if already available
   useEffect(() => {
     setisLoading(true);

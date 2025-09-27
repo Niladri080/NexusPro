@@ -6,7 +6,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
-const API_URL=process.env.REACT_APP_API_URL
+const API_URL = import.meta.env.VITE_API_URL;
 const RoadmapPage = () => {
   const roadmapSectionRef = useRef(null);
   const loadingRef = useRef(null);

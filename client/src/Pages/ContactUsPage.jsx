@@ -23,7 +23,7 @@ import { toast } from "react-toastify";
 import Loader from "../Components/Loader";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import PostHeader from "../Components/PostHeader";
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 // Sparkle component matching the original theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
