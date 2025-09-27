@@ -20,7 +20,7 @@ import { toast } from "react-toastify";
 import Cookies from 'js-cookie';
 import { useLocation } from "react-router-dom";
 
-
+const API_URL = process.env.REACT_APP_API_URL;
 const JobCard = ({ job, onLike, onShare }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -337,7 +337,7 @@ const JobPage = () => {
   useEffect(() => {
     if (!user?.id) return; 
     setIsInitialLoading(true);
-    axios.post("http://localhost:4000/api/home/fetch-jobs", { userId: user.id })
+    axios.post(`${API_URL}/api/home/fetch-jobs`, { userId: user.id })
       .then((res) => {
         if (res.data.success){
           console.log(res.data.jobs[0].job);
@@ -363,7 +363,7 @@ const JobPage = () => {
       return;
     }
     setIsLoading(true);
-    axios.post("http://localhost:4000/api/home/get-jobs", {
+    axios.post(`${API_URL}/api/home/get-jobs`, {
       location: location.toLowerCase(),
       userId: user.id,
       role: role,

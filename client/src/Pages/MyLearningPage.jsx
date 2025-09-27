@@ -43,10 +43,10 @@ const MyLearningPage = () => {
   const [roadmapSteps, setroadmapSteps] = useState([]);
   const [currentIndex, setcurrentIndex] = useState(-1);
   const [userData, setuserData] = useState({});
-
+  const API_URL = process.env.REACT_APP_API_URL
   useEffect(() => {
     axios
-      .post("http://localhost:4000/api/home/fetch-roadmap", {
+      .post(`${API_URL}/api/home/fetch-roadmap`, {
         userId: user.id,
       })
       .then((res) => {
@@ -61,7 +61,7 @@ const MyLearningPage = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .post("http://localhost:4000/api/home/fetch-data", {
+      .post(`${API_URL}/api/home/fetch-data`, {
         userId: user.id,
       })
       .then((res) => {
@@ -78,7 +78,7 @@ const MyLearningPage = () => {
 
   useEffect(() => {
     axios
-      .post("http://localhost:4000/api/home/fetch-stats", {
+      .post(`${API_URL}/api/home/fetch-stats`, {
         userId: user.id,
       })
       .then((res) => {

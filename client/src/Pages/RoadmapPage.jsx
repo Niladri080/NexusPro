@@ -6,7 +6,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
-
+const API_URL=process.env.REACT_APP_API_URL
 const RoadmapPage = () => {
   const roadmapSectionRef = useRef(null);
   const loadingRef = useRef(null);
@@ -117,7 +117,7 @@ const RoadmapPage = () => {
     if (goalExists && savedRole) {
       setIsGenerating(true);
       axios
-        .post("http://localhost:4000/api/home/fetch-roadmap", {
+        .post(`${API_URL}/api/home/fetch-roadmap`, {
           userId: user.id,
         })
         .then((res) => {
@@ -247,7 +247,7 @@ const RoadmapPage = () => {
   // Mark step as completed
   const handleMarkCompleted = async (stepId, idx) => {
     try {
-      await axios.post("http://localhost:4000/api/home/mark-as-complete", {
+      await axios.post(`${API_URL}/api/home/mark-as-complete`, {
         userId: user.id,
         stepId,
       });
@@ -339,7 +339,7 @@ const RoadmapPage = () => {
 
   const deleteJourney = () => {
     axios
-      .post("http://localhost:4000/api/home/delete-roadmap", {
+      .post(`${API_URL}/api/home/delete-roadmap`, {
         userId: user.id,
       })
       .then((res) => {
@@ -364,7 +364,7 @@ const RoadmapPage = () => {
     const roleName = selectedGoal?.title;
     const roadmap = sentRoad;
     axios
-      .post("http://localhost:4000/api/home/save-roadmap", {
+      .post(`${API_URL}/api/home/save-roadmap`, {
         role: roleName,
         roadmap,
         user: user,
@@ -390,7 +390,7 @@ const RoadmapPage = () => {
     const input = goal.title + " " + goal.description;
 
     axios
-      .post("http://localhost:4000/api/home/roadmap", { description: input })
+      .post(`${API_URL}/api/home/roadmap`, { description: input })
       .then((res) => {
         const jsonString = res.data.message.replace(/```json\n|```/g, "").trim();
         const parsedRoadmap = JSON.parse(jsonString);
@@ -421,7 +421,7 @@ const RoadmapPage = () => {
     setCurrentStepIndex(0);
 
     axios
-      .post("http://localhost:4000/api/home/roadmap", {
+      .post(`${API_URL}/api/home/roadmap`, {
         description: customGoal,
       })
       .then((res) => {

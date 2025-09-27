@@ -455,6 +455,7 @@ const NewsItem = ({ news }) => (
 );
 
 const Dashboard = () => {
+  const API_BASE=process.env.REACT_APP_API_URL
   const location = useLocation();
   const { user } = useUser();
   const navigate = useNavigate();
@@ -499,7 +500,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4000/api/home/get-tip/")
+      .get(`${API_BASE}/api/home/get-tip/`)
       .then((res) => {
         setaiTip(res.data.message);
       })
@@ -511,7 +512,7 @@ const Dashboard = () => {
   useEffect(() => {
     setLoadingInsights(true);
     axios
-      .get("http://localhost:4000/api/home/suggestions")
+      .get(`${API_BASE}/api/home/suggestions`)
       .then((res) => {
         const parsedSuggestions = parseApiResponse(res.data.message);
         setaiSuggestions(parsedSuggestions);
@@ -527,7 +528,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     setLoadingNews(true);
-    axios.get("http://localhost:4000/api/home/current-affairs")
+    axios.get(`${API_BASE}/api/home/current-affairs`)
       .then((res) => {
         const parsedAffairs = parseApiResponse(res.data.message);
         setcurrentAffairs(parsedAffairs);
@@ -545,7 +546,7 @@ const Dashboard = () => {
     if (hasGoal) {
       setLoadingRoadmap(true);
       axios
-        .post("http://localhost:4000/api/home/fetch-steps", {
+        .post(`${API_BASE}/api/home/fetch-steps`, {
           userId: user.id,
         })
         .then((res) => {
@@ -564,7 +565,7 @@ const Dashboard = () => {
   useEffect(() => {
     setLoadingResume(true);
     axios
-      .post("http://localhost:4000/api/home/fetch-data", {
+      .post(`${API_BASE}/api/home/fetch-data`, {
         userId: user.id,
       })
       .then((res) => {
@@ -581,7 +582,7 @@ const Dashboard = () => {
 
   useEffect(()=>{
     setLoadingResources(true);
-    axios.post("http://localhost:4000/api/home/dash-resource",{
+    axios.post(`${API_BASE}/api/home/dash-resource`,{
       userId:user.id
     })
     .then(res=>{
@@ -601,7 +602,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user?.id) return;
     setLoadingJobs(true);
-    axios.post("http://localhost:4000/api/home/fetch-jobs", { userId: user.id })
+    axios.post(`${API_BASE}/api/home/fetch-jobs`, { userId: user.id })
       .then((res) => {
         if (res.data.success){
           setjobRecommendations(res.data.jobs[0].job);

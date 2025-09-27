@@ -30,11 +30,8 @@ import {
 } from 'lucide-react';
 import PostHeader from '../Components/PostHeader';
 import { useUser } from '@clerk/clerk-react';
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
-// API configuration
-const API_BASE_URL = 'http://localhost:4000/api/home';
-
-// Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -43,7 +40,6 @@ const apiClient = axios.create({
   }
 });
 
-// API functions using axios and promises
 const postAPI = {
   createPost: (postData) => {
     return new Promise((resolve, reject) => {

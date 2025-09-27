@@ -29,13 +29,13 @@ const ResumePage = () => {
   const [resumeData, setresumeData] = useState({});
   const [suggestion, setsuggestion] = useState("");
   const [isLoading, setisLoading] = useState(true);
-
+  const API_URL=process.env.REACT_APP_API_URL
   // Fetch resume if already available
   useEffect(() => {
     setisLoading(true);
     if (!user) return;
     axios
-      .post("http://localhost:4000/api/home/fetch-resume", { userId: user.id })
+      .post(`${API_URL}/api/home/fetch-resume`, { userId: user.id })
       .then((res) => {
         if (res.data && res.data.analysis) {
           setresumeData(res.data);
@@ -232,7 +232,7 @@ const ResumePage = () => {
       formData.append("Role", "None");
     }
     axios
-      .post("http://localhost:4000/api/home/analyze-resume", formData)
+      .post(`${API_URL}/api/home/analyze-resume`, formData)
       .then((res) => {
         const jsonString = res.data.response
           .replace(/```json\n|```/g, "")
@@ -253,7 +253,7 @@ const ResumePage = () => {
   const handleResubmit = () => {
     setHasResume(false);
     axios
-      .post("http://localhost:4000/api/home/resubmit-resume", {
+      .post(`${API_URL}/api/home/resubmit-resume`, {
         userId: user.id,
       })
       .then((res) => {

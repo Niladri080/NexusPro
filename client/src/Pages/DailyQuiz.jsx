@@ -6,6 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const DailyQuiz = () => {
+  const API_URL=process.env.REACT_APP_API_URL;
   const {user}=useUser();
   const navigate=useNavigate();
   const location=useLocation();
@@ -21,7 +22,7 @@ const DailyQuiz = () => {
   
   useEffect(()=>{
     setIsLoading(true);
-    axios.post("http://localhost:4000/api/home/fetch-daily",{
+    axios.post(`${API_URL}/api/home/fetch-daily`,{
       userId:user.id
     })
     .then((res)=>{
@@ -51,7 +52,7 @@ const DailyQuiz = () => {
   },[user,location.pathname])
   
   const handleRightAnswer = () => {
-    axios.post("http://localhost:4000/api/home/submit-right", {
+    axios.post(`${API_URL}/api/home/submit-right`, {
       userId: user.id
     })
     .then(res => {
@@ -67,7 +68,7 @@ const DailyQuiz = () => {
   };
 
   const handleWrongAnswer = () => {
-    axios.post("http://localhost:4000/api/home/submit-wrong", {
+    axios.post(`${API_URL}/api/home/submit-wrong`, {
       userId: user.id
     })
     .then(res => {

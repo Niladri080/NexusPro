@@ -19,7 +19,7 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useLocation } from "react-router-dom";
-
+const API_URL = process.env.REACT_APP_API_URL;
 const ResourcesPage = () => {
   const { user } = useUser();
   const role = Cookies.get("goal") || "";
@@ -44,7 +44,7 @@ useEffect(() => {
   fetchedRef.current = true;
     setIsLoadingResources(true);
     axios
-      .post("http://localhost:4000/api/home/fetch-resources", {
+      .post(`${API_URL}/api/home/fetch-resources`, {
         goal: role,
         userId:user.id
       })
@@ -64,7 +64,7 @@ useEffect(() => {
   useEffect(() => {
     setIsLoadingSteps(true);
     axios
-      .post("http://localhost:4000/api/home/fetch-steps", {
+      .post(`${API_URL}/api/home/fetch-steps`, {
         userId: user.id,
       })
       .then((res) => {

@@ -23,10 +23,10 @@ import { toast } from "react-toastify";
 import Loader from "../Components/Loader";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import PostHeader from "../Components/PostHeader";
+const API_URL = process.env.REACT_APP_API_URL;
 // Sparkle component matching the original theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-
   useEffect(() => {
     setPosition({
       x: Math.random() * 100,
@@ -160,7 +160,7 @@ const ContactUsPage = () => {
     setloading(true);
     e.preventDefault();
     axios
-      .post("http://localhost:4000/sendEmail", formData, {
+      .post(`${API_URL}/sendEmail`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
