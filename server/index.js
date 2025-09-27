@@ -13,7 +13,7 @@ app.use(cookieParser())
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(
   cors({
-    origin:"http://localhost:5173",
+    origin:"https://nexus-pro-three.vercel.app",
     credentials:true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
