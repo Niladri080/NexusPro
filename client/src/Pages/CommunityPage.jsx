@@ -33,7 +33,7 @@ import { useUser } from '@clerk/clerk-react';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

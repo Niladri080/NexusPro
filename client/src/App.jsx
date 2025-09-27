@@ -24,7 +24,7 @@ import JobPage from "./Pages/JobPage";
 import DailyQuiz from "./Pages/DailyQuiz";
 
 function App() {
-  const API_BASE=process.env.REACT_APP_API_URL
+  const API_URL = import.meta.env.VITE_API_URL;
   const { user, isLoaded, isSignedIn } = useUser();
   useEffect(() => {
     const fetchRoadmap = async () => {
@@ -39,7 +39,7 @@ function App() {
           return;
         }
         const res = await axios.get(
-          `${API_BASE}/api/home/get-roadmap?userId=${userId}`
+          `${API_URL}/api/home/get-roadmap?userId=${userId}`
         );
 
         if (res.data?.role) {
