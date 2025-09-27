@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { CheckCircle, Clock, Target, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle, Clock, Target, Sparkles, ArrowRight, Menu } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react";
@@ -450,6 +450,13 @@ const RoadmapPage = () => {
       ></div>
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-blue-900/10"></div>
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none z-0"></div>
+      <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden fixed top-4 left-4 z-30 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg transition-all duration-300"
+              aria-label="Open sidebar"
+            >
+              <Menu size={24} />
+            </button>
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="lg:ml-72 relative z-10">

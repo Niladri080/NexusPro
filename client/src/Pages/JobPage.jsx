@@ -20,6 +20,7 @@ import { toast } from "react-toastify";
 import Cookies from 'js-cookie';
 import { useLocation } from "react-router-dom";
 
+
 const JobCard = ({ job, onLike, onShare }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -29,9 +30,83 @@ const JobCard = ({ job, onLike, onShare }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    onLike(job.id);
+
+  const handleShare = () => {
+    // Create shareable job data
+    const jobTitle = job.title || 'Job Opportunity';
+    const companyName = job.company || 'Company';
+    const location = job.location || 'Location not specified';
+    const salary = job.salary || 'Salary not disclosed';
+    
+    // Create share text
+    const shareText = `🚀 ${jobTitle} at ${companyName}
+📍 ${location}
+💰 ${salary}
+🔗 Apply now: ${job.link || 'Link not available'}
+
+Found this opportunity on NexusPro! #Jobs #Career`;
+
+    // Create share URL (you can customize this based on your routing)
+    const shareUrl = job.link || `${window.location.origin}/jobs`;
+    
+    if (navigator.share) {
+      // Use native Web Share API if available (mobile devices)
+      navigator.share({
+        title: `${jobTitle} - ${companyName}`,
+        text: `Check out this job opportunity: ${jobTitle} at ${companyName} in ${location}`,
+        url: shareUrl
+      }).then(() => {
+        console.log('Job shared successfully');
+      }).catch((error) => {
+        console.error('Error sharing:', error);
+        // Fallback to clipboard
+        copyToClipboard(shareText);
+      });
+    } else {
+      // Fallback: Copy to clipboard
+      copyToClipboard(shareText);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          toast.success('Job details copied to clipboard!');
+        })
+        .catch((error) => {
+          console.error('Error copying to clipboard:', error);
+          // Final fallback: create a temporary textarea
+          fallbackCopyToClipboard(text);
+        });
+    } else {
+      fallbackCopyToClipboard(text);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        toast.success('Job details copied to clipboard!');
+      } else {
+        toast.error('Unable to copy. Please copy the job link manually.');
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      toast.error('Unable to copy. Please copy the job link manually.');
+    }
   };
 
   return (
@@ -70,18 +145,9 @@ const JobCard = ({ job, onLike, onShare }) => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={handleLike}
-              className={`p-2 rounded-lg transition-all duration-300 ${
-                isLiked
-                  ? "bg-red-500/20 text-red-400 scale-110"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-red-400"
-              }`}
-            >
-              <Heart className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onShare(job.id)}
+              onClick={handleShare}
               className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-blue-400 transition-all duration-300"
+              title="Share this job"
             >
               <Share className="w-4 h-4" />
             </button>
@@ -159,6 +225,12 @@ const JobCard = ({ job, onLike, onShare }) => {
   );
 };
 
+// Updated handleShare function in main component (remove the old one)
+const handleShare = (jobId) => {
+  // This can be used for analytics tracking
+  console.log(`Shared job ${jobId}`);
+  // You can add analytics tracking here if needed
+};
 const FilterDropdown = ({ title, options, selected, onSelect, icon: Icon }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);

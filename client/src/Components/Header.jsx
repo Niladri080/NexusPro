@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   SignedIn,
   SignedOut,
@@ -5,8 +6,10 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 
 const Header = ({ handleFeaturesClick }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,113 +26,174 @@ const Header = ({ handleFeaturesClick }) => {
       break;
   }
 
+  const handleNavigation = (path) => {
+    navigate(path);
+    setIsMenuOpen(false); // Close menu after navigation
+  };
+
   return (
-    <header className="flex justify-between items-center mb-16">
-      <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-wider text-blue-400">
-          nexusPro
-        </h1>
-      </div>
-      <nav className="hidden md:flex items-center space-x-10 text-gray-300">
-        <a
-          onClick={() => {
-            navigate("/");
-          }}
-          className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
-            selected === "Home" ? "text-blue-600" : "text-gray-300"
-          }`}
-        >
-          Home
-        </a>
-        <a
-          onClick={() => {
-            navigate("/about-us");
-          }}
-          className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
-            selected === "About" ? "text-blue-600" : "text-gray-300"
-          }`}
-        >
-          About Us
-        </a>
-        <a
-          onClick={() => {
-            navigate("/contact-us");
-          }}
-          className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
-            selected === "Contact" ? "text-blue-600" : "text-gray-300"
-          }`}
-        >
-          Contact Us
-        </a>
-      </nav>
-      <div className="flex items-center space-x-6">
-        <SignedIn>
-          <UserButton appearance={{
-          elements: {
-            rootBox: {
-              width: "38px",
-              height: "38px",
-            },
-            avatarBox: {
-              width: "38px",
-              height: "38px",
-            },
-          },
-        }}/>
-        </SignedIn>
-        <SignedOut>
-          <button
-            onClick={() => navigate("/sign-in")}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105"
+    <>
+      <header className="flex justify-between items-center mb-16">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-wider text-blue-400">
+            nexusPro
+          </h1>
+        </div>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-10 text-gray-300">
+          <a
+            onClick={() => handleNavigation("/")}
+            className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
+              selected === "Home" ? "text-blue-600" : "text-gray-300"
+            }`}
           >
-            Sign In
+            Home
+          </a>
+          <a
+            onClick={() => handleNavigation("/about-us")}
+            className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
+              selected === "About" ? "text-blue-600" : "text-gray-300"
+            }`}
+          >
+            About Us
+          </a>
+          <a
+            onClick={() => handleNavigation("/contact-us")}
+            className={`hover:text-white transition-colors text-lg font-medium cursor-pointer ${
+              selected === "Contact" ? "text-blue-600" : "text-gray-300"
+            }`}
+          >
+            Contact Us
+          </a>
+        </nav>
+
+        <div className="flex items-center space-x-4">
+          {/* Hamburger Menu Button - Mobile Only */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 text-gray-400 hover:text-blue-400 transition-colors"
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-        </SignedOut>
-      </div>
-    </header>
-  );
-};
-export default Header;
-{
-  /* <header className="border-b border-gray-800 bg-[#0f0f11]/90 backdrop-blur-sm sticky top-0 z-20">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <Star className="w-5 h-5 text-white" />
-                  </div>
-                  <h1 className="text-xl font-bold text-blue-400">nexusPro</h1>
-                </div>
-                <nav className="hidden md:flex items-center space-x-6 text-gray-300 text-sm">
-                  <a href="#" className="text-blue-400 font-medium">Dashboard</a>
-                  <a href="#" className="hover:text-white transition-colors">Roadmap</a>
-                  <a href="#" className="hover:text-white transition-colors">Jobs</a>
-                  <a href="#" className="hover:text-white transition-colors">Learning</a>
-                </nav>
+
+          {/* Desktop Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-6">
+            <SignedIn>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    rootBox: {
+                      width: "38px",
+                      height: "38px",
+                    },
+                    avatarBox: {
+                      width: "38px",
+                      height: "38px",
+                    },
+                  },
+                }}
+              />
+            </SignedIn>
+            <SignedOut>
+              <button
+                onClick={() => navigate("/sign-in")}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105"
+              >
+                Sign In
+              </button>
+            </SignedOut>
+          </div>
+
+          {/* Mobile Auth Buttons */}
+          <div className="md:hidden">
+            <SignedIn>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    rootBox: {
+                      width: "32px",
+                      height: "32px",
+                    },
+                    avatarBox: {
+                      width: "32px",
+                      height: "32px",
+                    },
+                  },
+                }}
+              />
+            </SignedIn>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMenuOpen(false)}>
+          <div className="fixed top-0 right-0 h-full w-64 bg-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out">
+            <div className="flex flex-col p-6 space-y-6">
+              {/* Close button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="Search..." 
-                    className="bg-gray-800/50 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none w-64"
-                  />
-                </div>
-                <button className="relative p-2 text-gray-400 hover:text-blue-400 transition-colors">
-                  <Bell size={20} />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
-                </button>
-                <button className="p-2 text-gray-400 hover:text-blue-400 transition-colors">
-                  <Settings size={20} />
-                </button>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <User size={16} className="text-white" />
-                </div>
+
+              {/* Mobile Navigation Links */}
+              <nav className="flex flex-col space-y-4">
+                <a
+                  onClick={() => handleNavigation("/")}
+                  className={`hover:text-white transition-colors text-lg font-medium cursor-pointer py-3 px-4 rounded ${
+                    selected === "Home" 
+                      ? "text-blue-400 bg-blue-900/20" 
+                      : "text-gray-300"
+                  }`}
+                >
+                  Home
+                </a>
+                <a
+                  onClick={() => handleNavigation("/about-us")}
+                  className={`hover:text-white transition-colors text-lg font-medium cursor-pointer py-3 px-4 rounded ${
+                    selected === "About" 
+                      ? "text-blue-400 bg-blue-900/20" 
+                      : "text-gray-300"
+                  }`}
+                >
+                  About Us
+                </a>
+                <a
+                  onClick={() => handleNavigation("/contact-us")}
+                  className={`hover:text-white transition-colors text-lg font-medium cursor-pointer py-3 px-4 rounded ${
+                    selected === "Contact" 
+                      ? "text-blue-400 bg-blue-900/20" 
+                      : "text-gray-300"
+                  }`}
+                >
+                  Contact Us
+                </a>
+              </nav>
+
+              {/* Mobile Auth Section */}
+              <div className="pt-4 border-t border-gray-700">
+                <SignedOut>
+                  <button
+                    onClick={() => handleNavigation("/sign-in")}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-3 px-4 rounded-md transition-all duration-300"
+                  >
+                    Sign In
+                  </button>
+                </SignedOut>
               </div>
             </div>
           </div>
-        </header> */
-}
+        </div>
+      )}
+    </>
+  );
+};
+
+export default Header;

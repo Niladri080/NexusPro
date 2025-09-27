@@ -11,7 +11,7 @@ import {
   Sparkles,
   Users,
   BookOpen,
-  Loader2,
+  Menu,
 } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import { useUser } from "@clerk/clerk-react";
@@ -225,7 +225,7 @@ useEffect(() => {
     const typeInfo = getTypeIcon(resource.type);
     const TypeIcon = typeInfo.icon;
     const isCompleted = completedResources.has(resource.id);
-    const isSaved = savedResources.has(resource.id);
+    // const isSaved = savedResources.has(resource.id);
 
     return (
       <div
@@ -235,7 +235,7 @@ useEffect(() => {
             : "border-blue-700/50 hover:border-blue-500/50"
         } flex flex-col h-full`}
       >
-        <button
+        {/* <button
           onClick={() => toggleSaveResource(resource.id)}
           className="absolute top-4 right-4 z-10 p-2 bg-gray-800/80 rounded-full hover:bg-gray-700/80 transition-colors"
         >
@@ -244,7 +244,7 @@ useEffect(() => {
           ) : (
             <Bookmark className="text-gray-400 hover:text-white" size={20} />
           )}
-        </button>
+        </button> */}
 
         <div className="p-6 space-y-4 flex-1 flex flex-col">
           {/* Type and Difficulty */}
@@ -353,7 +353,13 @@ useEffect(() => {
       ></div>
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-blue-900/10"></div>
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none z-0"></div>
-
+        <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden fixed top-4 left-4 z-30 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg transition-all duration-300"
+                aria-label="Open sidebar"
+              >
+                <Menu size={24} />
+              </button>
       {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 

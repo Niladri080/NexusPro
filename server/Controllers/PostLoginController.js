@@ -488,7 +488,7 @@ export const fetchSteps = async (req, res) => {
     }
     const current = roadMapData.currentIndex;
     const Total = roadMapData.roadmap.length;
-    return res.status(200).json({ current, Total });
+    return res.status(200).json({ current:current===Total-1?Total:current, Total });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Data can't be fetched" });
@@ -498,11 +498,14 @@ export const DashResource = async (req, res) => {
   try {
     const { userId } = req.body;
     const result = await Resource.findOne({ userId });
+    if (!result){
+      return res.status(200).json({success: false, resource: [] });
+    }
     const response = [];
     for (let i = 0; i < 6 && i < result.resource.length; i++) {
       response.push(result.resource[i]);
     }
-    res.status(200).json({ resource: response });
+    res.status(200).json({success:true,resource: response });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Data can't be fetched" });
