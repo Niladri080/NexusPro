@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 import Loader from "../Components/Loader";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import PostHeader from "../Components/PostHeader";
+import { useNavigate } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_URL;
 // Sparkle component matching the original theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
@@ -125,18 +126,12 @@ const SupportOption = ({
       <p className="text-gray-400 mb-6 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
         {description}
       </p>
-
-      <button
-        onClick={action}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/25 flex items-center gap-2 mx-auto"
-      >
-        {buttonText} <ArrowRight size={16} />
-      </button>
     </div>
   </div>
 );
 
 const ContactUsPage = () => {
+  const navigate=useNavigate()
   const [loading, setloading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -503,12 +498,10 @@ const ContactUsPage = () => {
                 take the first step towards your professional goals.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30">
+                <button onClick={()=>{
+                  navigate("/sign-in")
+                }} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30">
                   Start Free Trial
-                </button>
-                <button className="border border-gray-600 hover:border-blue-500 text-gray-300 hover:text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300">
-                  <Calendar className="inline mr-2" size={20} />
-                  Book Demo
                 </button>
               </div>
             </div>

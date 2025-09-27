@@ -4,6 +4,7 @@ import Header from '../Components/Header';
 import Footer from '../Components/Footer';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import PostHeader from '../Components/PostHeader';
+import { useNavigate } from 'react-router-dom';
 
 const Sparkle = ({ delay = 0, size = 'w-1 h-1' }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -87,6 +88,7 @@ const ValueCard = ({ icon: Icon, title, description }) => (
 
 
 const AboutUsPage = () => {
+  const navigate=useNavigate()
   const teamMembers = [
     {
       name: "Niladri Mandal",
@@ -173,7 +175,9 @@ const AboutUsPage = () => {
                 </p>
               </div>
               <div className="mt-8">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                <button onClick={()=>{
+            navigate("/sign-in")
+          }} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center gap-2">
                   Join Our Mission <ArrowRight size={20} />
                 </button>
               </div>
@@ -254,11 +258,10 @@ const AboutUsPage = () => {
                 Join thousands of professionals who've already discovered their career potential with nexusPro.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30">
+                <button onClick={()=>{
+            navigate("/sign-in")
+          }} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30">
                   Get Started Free
-                </button>
-                <button className="border border-gray-600 hover:border-blue-500 text-gray-300 hover:text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300">
-                  Schedule Demo
                 </button>
               </div>
             </div>

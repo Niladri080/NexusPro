@@ -1,5 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 const HeroSection=()=>{
+  const navigate=useNavigate();
   return (
     <main className="text-center py-20 lg:py-32 relative">
           <div className="absolute inset-0 flex items-center justify-center -z-10">
@@ -15,7 +17,9 @@ const HeroSection=()=>{
           <p className="max-w-xl mx-auto text-gray-300 mb-10 text-lg animate-fade-in-up animate-delay-200">
             Navigate your career with precision. We provide AI-driven intelligence to help you land your next role and achieve your professional goals.
           </p>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-10 rounded-full transition-transform transform hover:scale-105 shadow-lg shadow-blue-500/30 animate-fade-in-up animate-delay-400">
+          <button onClick={()=>{
+            navigate("/sign-in")
+          }} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-10 rounded-full transition-transform transform hover:scale-105 shadow-lg shadow-blue-500/30 animate-fade-in-up animate-delay-400">
             Launch Your Career
           </button>
         </main>
