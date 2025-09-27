@@ -164,10 +164,12 @@ export const fetchRoadmap = async (req, res) => {
     const { userId } = req.body;
     const results = await Roadmap.findOne({ userId: userId });
     if (!results) {
-      return res.status(200).json({ success:false,message: "Can't find details" });
+      return res
+        .status(200)
+        .json({ success: false, message: "Can't find details" });
     }
     res.status(200).json({
-      success:true,
+      success: true,
       roadmap: results.roadmap,
       currentIndex: results.currentIndex,
       hasCompleted: results.hasCompleted,
@@ -359,7 +361,9 @@ export const fetchResume = async (req, res) => {
     const { userId } = req.body;
     const resume = await Reusme.findOne({ userId });
     if (!resume) {
-      return res.status(202).json({success:false, message: "No resume found" });
+      return res
+        .status(202)
+        .json({ success: false, message: "No resume found" });
     }
     res.status(200).json(resume);
   } catch (err) {
@@ -789,9 +793,11 @@ export const fetchJobs = async (req, res) => {
     const { userId } = req.body;
     const jobs = await Job.find({ userId: userId });
     if (!jobs) {
-      return res.status(200).json({success:false, message: "Can't find details" });
+      return res
+        .status(200)
+        .json({ success: false, message: "Can't find details" });
     }
-    res.status(200).json({success:true, jobs: jobs });
+    res.status(200).json({ success: true, jobs: jobs });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Failed to fetch post details" });
@@ -851,23 +857,23 @@ export const DailyQuestion = async (req, res) => {
   try {
     const { userId } = req.body;
     const questions = await Ques.find({});
-    
+
     if (questions.length === 0) {
       return res.status(404).json({ message: "No questions available" });
     }
-    
+
     const hasAnswered = questions[0].answeredBy.includes(userId);
-    
+
     const user = await DailyUser.findOne({ userId: userId });
     let streak = 0;
     if (user) {
       streak = user.currentStreak;
     }
-    
-    res.status(200).json({ 
-      hasAnswered: hasAnswered, 
-      questions: questions, 
-      streak: streak 
+
+    res.status(200).json({
+      hasAnswered: hasAnswered,
+      questions: questions,
+      streak: streak,
     });
   } catch (err) {
     console.log(err.message);
@@ -878,63 +884,72 @@ export const DailyQuestion = async (req, res) => {
 export const SubmitDaily = async (req, res) => {
   try {
     const { userId } = req.body;
-    
-    // Add user to answered list first
-    const question = await Ques.findOne({});
-    if (question && !question.answeredBy.includes(userId)) {
+    let question = await Ques.findOne({});
+    if (!question) {
+      return res.status(404).json({ message: "No question found" });
+    }
+    if (!Array.isArray(question.answeredBy)) {
+      question.answeredBy = [];
+    }
+
+    if (!question.answeredBy.includes(userId)) {
       question.answeredBy.push(userId);
       await question.save();
     }
-    
-    const existingUser = await DailyUser.findOne({ userId: userId });
-    
-    if (!existingUser) {
-      const newUser = new DailyUser({
-        userId: userId,
-        lastAnsweredDate: new Date().toISOString().slice(0, 10),
-        currentStreak: 1
-      });
-      await newUser.save();
-      return res.status(200).json({ message: "User created", streak: 1 });
-    }
-    
+    let existingUser = await DailyUser.findOne({ userId });
     const today = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - 86400000)
       .toISOString()
       .slice(0, 10);
-    
-    if (existingUser.lastAnsweredDate === today) {
-      // Already answered today
-      return res.status(200).json({ 
-        message: "Already answered today", 
-        streak: existingUser.currentStreak 
+
+    if (!existingUser) {
+      existingUser = new DailyUser({
+        userId,
+        lastAnsweredDate: today,
+        currentStreak: 1,
+        lastAnswerCorrect: true,
       });
-    } else if (existingUser.lastAnsweredDate === yesterday) {
+      await existingUser.save();
+      return res.status(200).json({ message: "User created", streak: 1 });
+    }
+
+    if (existingUser.lastAnsweredDate === today) {
+      return res.status(200).json({
+        message: "Already answered today",
+        streak: existingUser.currentStreak,
+      });
+    }
+
+    if (
+      existingUser.lastAnsweredDate === yesterday &&
+      existingUser.lastAnswerCorrect
+    ) {
       existingUser.currentStreak += 1;
-      existingUser.lastAnsweredDate = today;
     } else {
       existingUser.currentStreak = 1;
-      existingUser.lastAnsweredDate = today;
     }
-    
+
+    existingUser.lastAnsweredDate = today;
+    existingUser.lastAnswerCorrect = true;
     await existingUser.save();
-    
-    res.status(200).json({ 
-      message: "Daily quiz submitted", 
-      streak: existingUser.currentStreak 
+
+    return res.status(200).json({
+      message: "Daily quiz submitted",
+      streak: existingUser.currentStreak,
     });
   } catch (err) {
     console.error("SubmitDaily error:", err);
     res.status(500).json({ message: "Request failed" });
   }
 };
+
 export const submitWrong = async (req, res) => {
   try {
     const { userId } = req.body;
     const question = await Ques.findOne({});
-    
+
     if (question && !question.answeredBy.includes(userId)) {
-      question.answeredBy.push(userId);  
+      question.answeredBy.push(userId);
       await question.save();
     }
     const existingUser = await DailyUser.findOne({ userId: userId });
@@ -943,36 +958,38 @@ export const submitWrong = async (req, res) => {
         userId: userId,
         lastAnsweredDate: new Date().toISOString().slice(0, 10),
         currentStreak: 0,
+        lastAnswerCorrect: false,
       });
       await newUser.save();
       return res.status(200).json({ message: "User created", streak: 0 });
     }
-    
+
     existingUser.currentStreak = 0;
     existingUser.lastAnsweredDate = new Date().toISOString().slice(0, 10);
+    existingUser.lastAnswerCorrect = false;
     await existingUser.save();
-    
-    res.status(200).json({ 
-      message: "Submitted", 
-      streak: existingUser.currentStreak 
+
+    res.status(200).json({
+      message: "Submitted",
+      streak: existingUser.currentStreak,
     });
   } catch (err) {
     console.error("submitWrong error:", err);
     res.status(500).json({ message: "Request failed" });
   }
 };
-export const FetchStats=async (req,res)=>{
+export const FetchStats = async (req, res) => {
   try {
     const { userId } = req.body;
     const user = await DailyUser.findOne({ userId: userId });
-    const roadmap=await Roadmap.findOne({userId:userId});
+    const roadmap = await Roadmap.findOne({ userId: userId });
     res.status(200).json({
-      streak: user?user.currentStreak:0,
-      curr:roadmap?roadmap.currentIndex:0,
-      total:roadmap?roadmap.roadmap.length:0,
+      streak: user ? user.currentStreak : 0,
+      curr: roadmap ? roadmap.currentIndex : 0,
+      total: roadmap ? roadmap.roadmap.length : 0,
     });
   } catch (err) {
     console.error("FetchStats error:", err);
     res.status(500).json({ message: "Request failed" });
   }
-}
+};

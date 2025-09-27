@@ -237,7 +237,9 @@ const MyLearningPage = () => {
                   {hasRoadmap && currentIndex>0?"Keep going! You're doing great.":"Start your journey!"}
                 </p>
                 {!hasRoadmap && !loading && (
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 mt-8">
+                  <button onClick={()=>{
+                    navigate("/generate-roadmap")
+                  }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 mt-8">
                     Build Roadmap
                   </button>
                 )}
@@ -265,7 +267,9 @@ const MyLearningPage = () => {
                     Upload Your resume to get the score
                   </p>
                 )}
-                <button className="mt-8 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+                <button onClick={()=>{
+                  navigate("/resume-upload")
+                }} className="mt-8 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
                   <Upload size={16} />
                   {hasResume ? "Update Resume" : "Upload Resume"}
                 </button>

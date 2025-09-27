@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CheckCircle, Clock, Target, Sparkles, ArrowRight } from "lucide-react";
 import Sidebar from "../Components/Sidebar";
 import axios from "axios";
@@ -6,11 +6,64 @@ import { useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
-import { useRef } from "react";
 
 const RoadmapPage = () => {
+  const roadmapSectionRef = useRef(null);
+  const loadingRef = useRef(null);
+  const startJourneyRef = useRef(null);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: "smooth",
+      });
+    }, 150);
+  };
+
+  const scrollToRoadmapSection = () => {
+    setTimeout(() => {
+      if (roadmapSectionRef.current) {
+        roadmapSectionRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 200);
+  };
+
+  const scrollToLoadingSection = () => {
+    setTimeout(() => {
+      if (loadingRef.current) {
+        loadingRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
+  };
+
+  const scrollToStartJourney = () => {
+    setTimeout(() => {
+      if (startJourneyRef.current) {
+        startJourneyRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 300);
+  };
+
   const { user } = useUser();
   const location = useLocation();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [customGoal, setCustomGoal] = useState("");
@@ -20,16 +73,43 @@ const RoadmapPage = () => {
   const [sentRoad, setSentRoad] = useState([]);
   const [hasGoal, setHasGoal] = useState(false);
   const [role, setRole] = useState("");
-  const [load, setload] = useState(false);
+  const [load, setLoad] = useState(false);
   const [completedSteps, setCompletedSteps] = useState({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
+  const [shouldScrollToRoadmap, setShouldScrollToRoadmap] = useState(false);
+  const [shouldScrollToStartJourney, setShouldScrollToStartJourney] = useState(false);
+
+  // Handle scrolling when roadmap becomes visible
+  useEffect(() => {
+    if (shouldScrollToRoadmap && showRoadmap && !isGenerating) {
+      scrollToRoadmapSection();
+      setShouldScrollToRoadmap(false);
+    }
+  }, [shouldScrollToRoadmap, showRoadmap, isGenerating]);
+
+  // Handle scrolling to Start Journey button for new roadmaps
+  useEffect(() => {
+    if (shouldScrollToStartJourney && showRoadmap && !isGenerating && !hasGoal) {
+      scrollToStartJourney();
+      setShouldScrollToStartJourney(false);
+    }
+  }, [shouldScrollToStartJourney, showRoadmap, isGenerating, hasGoal]);
+
+  // Handle scrolling when loading starts
+  useEffect(() => {
+    if (isGenerating) {
+      scrollToLoadingSection();
+    }
+  }, [isGenerating]);
+
+  // On mount / when location or user changes, fetch existing roadmap if cookie present
   useEffect(() => {
     if (!user) {
       setIsGenerating(false);
       setShowRoadmap(false);
       return;
-    } 
+    }
     const goalExists = Cookies.get("hasGoal") === "true";
     const savedRole = Cookies.get("goal") || "";
     setHasGoal(goalExists);
@@ -55,10 +135,11 @@ const RoadmapPage = () => {
             }
           }
           setCompletedSteps(completed);
-          setCurrentStepIndex(res.data.currentIndex || 0);
+          setCurrentStepIndex(res.data.currentIndex || currentIdx || 0);
 
           setIsGenerating(false);
           setShowRoadmap(true);
+          setShouldScrollToRoadmap(true);
         })
         .catch((err) => {
           Cookies.remove("hasGoal");
@@ -150,9 +231,7 @@ const RoadmapPage = () => {
       <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
         {goal.title}
       </h3>
-      <p className="text-gray-400 text-sm leading-relaxed">
-        {goal.description}
-      </p>
+      <p className="text-gray-400 text-sm leading-relaxed">{goal.description}</p>
       {isSelected && (
         <div className="absolute top-3 right-3">
           <CheckCircle className="text-blue-400" size={24} />
@@ -161,13 +240,9 @@ const RoadmapPage = () => {
     </div>
   );
 
-  // Move currentRoadmap here!
+  // currentRoadmap getter
   const currentRoadmap =
-    selectedGoal && roadmapData[selectedGoal.id]
-      ? roadmapData[selectedGoal.id]
-      : [];
-
-  // When roadmap loads, reset completedSteps and currentStepIndex
+    selectedGoal && roadmapData[selectedGoal.id] ? roadmapData[selectedGoal.id] : [];
 
   // Mark step as completed
   const handleMarkCompleted = async (stepId, idx) => {
@@ -178,7 +253,6 @@ const RoadmapPage = () => {
       });
       setCompletedSteps((prev) => ({ ...prev, [stepId]: true }));
       toast.success("Step marked as completed!");
-      // Move to next step if exists
       if (idx + 1 < currentRoadmap.length) {
         setCurrentStepIndex(idx + 1);
       }
@@ -197,20 +271,14 @@ const RoadmapPage = () => {
         <div className="flex flex-col items-center">
           <div
             className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shadow-lg ${
-              isCompleted
-                ? "bg-green-500"
-                : isCurrent
-                ? "bg-blue-500"
-                : "bg-gray-600"
+              isCompleted ? "bg-green-500" : isCurrent ? "bg-blue-500" : "bg-gray-600"
             }`}
           >
             {isCompleted ? <CheckCircle size={20} /> : step.id}
           </div>
           {!isLast && (
             <div
-              className={`w-0.5 h-16 mt-2 ${
-                isCompleted ? "bg-green-400" : "bg-gray-600"
-              }`}
+              className={`w-0.5 h-16 mt-2 ${isCompleted ? "bg-green-400" : "bg-gray-600"}`}
             ></div>
           )}
         </div>
@@ -233,6 +301,7 @@ const RoadmapPage = () => {
               </div>
             </div>
             <p className="text-gray-300 mb-4">{step.description}</p>
+
             {/* Action Buttons */}
             {hasGoal && isCurrent && !isCompleted && (
               <div className="flex items-center gap-4 mt-4">
@@ -249,12 +318,11 @@ const RoadmapPage = () => {
                     onChange={() => handleMarkCompleted(step.id, index)}
                     className="accent-blue-600 w-5 h-5"
                   />
-                  <span className="text-white font-medium">
-                    Mark as Completed
-                  </span>
+                  <span className="text-white font-medium">Mark as Completed</span>
                 </label>
               </div>
             )}
+
             {isCompleted && (
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mt-4"
@@ -268,6 +336,7 @@ const RoadmapPage = () => {
       </div>
     );
   };
+
   const deleteJourney = () => {
     axios
       .post("http://localhost:4000/api/home/delete-roadmap", {
@@ -276,13 +345,14 @@ const RoadmapPage = () => {
       .then((res) => {
         Cookies.remove("hasGoal");
         Cookies.remove("goal");
-        setload(!load);
+        setLoad((prev) => !prev);
         setShowRoadmap(false);
         setRoadmapData({});
         setSelectedGoal(null);
         setSentRoad([]);
-        setCompletedSteps({}); // ✅ Reset completed steps
-        setCurrentStepIndex(0); // ✅ Reset current step index
+        setCompletedSteps({});
+        setCurrentStepIndex(0);
+        scrollToTop();
         toast.success("Your path deleted successfully");
       })
       .catch((err) => {
@@ -291,20 +361,21 @@ const RoadmapPage = () => {
   };
 
   const handleStartJourney = () => {
-    const roleName = selectedGoal.title;
+    const roleName = selectedGoal?.title;
     const roadmap = sentRoad;
     axios
       .post("http://localhost:4000/api/home/save-roadmap", {
         role: roleName,
         roadmap,
-        user,
+        user: user,
       })
       .then(() => {
         Cookies.set("hasGoal", "true", { expires: 3650 });
         Cookies.set("goal", roleName, { expires: 3650 });
         setRole(roleName);
         setHasGoal(true);
-        setload(!load);
+        setLoad((prev) => !prev);
+        scrollToTop();
       })
       .catch((err) => console.log(err.message));
   };
@@ -314,16 +385,14 @@ const RoadmapPage = () => {
     setCustomGoal("");
     setShowRoadmap(false);
     setIsGenerating(true);
-    setCompletedSteps({}); // ✅ Reset steps every time you select a goal
-    setCurrentStepIndex(0); // ✅ Reset index too
-
+    setCompletedSteps({});
+    setCurrentStepIndex(0);
     const input = goal.title + " " + goal.description;
+
     axios
       .post("http://localhost:4000/api/home/roadmap", { description: input })
       .then((res) => {
-        const jsonString = res.data.message
-          .replace(/```json\n|```/g, "")
-          .trim();
+        const jsonString = res.data.message.replace(/```json\n|```/g, "").trim();
         const parsedRoadmap = JSON.parse(jsonString);
         setSentRoad(parsedRoadmap.roadmap);
         setRoadmapData((prev) => ({
@@ -332,6 +401,7 @@ const RoadmapPage = () => {
         }));
         setIsGenerating(false);
         setShowRoadmap(true);
+        setShouldScrollToStartJourney(true);
       })
       .catch((err) => setIsGenerating(false));
   };
@@ -347,15 +417,15 @@ const RoadmapPage = () => {
     setSelectedGoal(customGoalObj);
     setShowRoadmap(false);
     setIsGenerating(true);
+    setCompletedSteps({});
+    setCurrentStepIndex(0);
 
     axios
       .post("http://localhost:4000/api/home/roadmap", {
         description: customGoal,
       })
       .then((res) => {
-        const jsonString = res.data.message
-          .replace(/```json\n|```/g, "")
-          .trim();
+        const jsonString = res.data.message.replace(/```json\n|```/g, "").trim();
         const parsedRoadmap = JSON.parse(jsonString);
         setSentRoad(parsedRoadmap.roadmap);
         setRoadmapData((prev) => ({
@@ -364,12 +434,13 @@ const RoadmapPage = () => {
         }));
         setIsGenerating(false);
         setShowRoadmap(true);
+        setShouldScrollToStartJourney(true);
       })
       .catch((err) => setIsGenerating(false));
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-white font-sans overflow-hidden relative">
+    <div className="min-h-screen bg-[#0a0a0c] text-white font-sans relative">
       <div
         className="absolute inset-0 bg-cover bg-fixed opacity-10"
         style={{
@@ -431,7 +502,6 @@ const RoadmapPage = () => {
           {/* Custom goal */}
           {!hasGoal && (
             <>
-              {/* Add this divider and message before the custom goal box */}
               <div className="flex items-center gap-4 mb-8">
                 <div className="flex-1 h-px bg-gray-700"></div>
                 <span className="text-gray-400 bg-[#0a0a0c] px-4">
@@ -443,9 +513,7 @@ const RoadmapPage = () => {
                 <div className="bg-white/5 border border-blue-400/10 p-8 rounded-2xl shadow-xl backdrop-blur-2xl">
                   <div className="flex items-center gap-3 mb-6">
                     <Sparkles className="text-purple-400" size={24} />
-                    <h3 className="text-xl font-semibold">
-                      Custom Career Goal
-                    </h3>
+                    <h3 className="text-xl font-semibold">Custom Career Goal</h3>
                   </div>
                   <div className="space-y-4">
                     <textarea
@@ -470,7 +538,7 @@ const RoadmapPage = () => {
 
           {/* Loading */}
           {isGenerating && (
-            <div className="text-center py-12">
+            <div ref={loadingRef} className="text-center py-12">
               <div className="inline-flex items-center gap-3 px-6 py-3 bg-blue-600/20 rounded-full border border-blue-500/30">
                 <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-lg font-semibold">
@@ -482,36 +550,26 @@ const RoadmapPage = () => {
 
           {/* Display roadmap */}
           {showRoadmap && selectedGoal && (
-            <div className="space-y-8 animate-fade-in">
+            <div ref={roadmapSectionRef} className="space-y-8 animate-fade-in">
               <div className="text-center">
                 {!hasGoal && (
                   <div className="inline-flex items-center gap-3 bg-green-600/20 px-6 py-3 rounded-full border border-green-500/30 mb-6">
                     <CheckCircle className="text-green-400" size={24} />
-                    <span className="text-lg font-semibold">
-                      Your roadmap is ready!
-                    </span>
+                    <span className="text-lg font-semibold">Your roadmap is ready!</span>
                   </div>
                 )}
-                <h2 className="text-3xl font-bold mb-4">
-                  Roadmap for {selectedGoal.title}
-                </h2>
+                <h2 className="text-3xl font-bold mb-4">Roadmap for {selectedGoal.title}</h2>
                 <p className="text-gray-400 text-lg">
-                  Follow these steps to achieve your career goal. Each step
-                  builds on the previous one.
+                  Follow these steps to achieve your career goal. Each step builds on the previous one.
                 </p>
               </div>
               <div className="max-w-4xl mx-auto bg-white/5 border border-blue-400/10 p-8 rounded-2xl shadow-xl backdrop-blur-2xl">
                 <div className="space-y-2">
                   {currentRoadmap.map((step, index) => (
-                    <RoadmapStep
-                      key={step.id}
-                      step={step}
-                      index={index}
-                      isLast={index === currentRoadmap.length - 1}
-                    />
+                    <RoadmapStep key={step.id} step={step} index={index} isLast={index === currentRoadmap.length - 1} />
                   ))}
                 </div>
-                <div className="text-center mt-8 pt-8 border-t border-gray-700">
+                <div className="text-center mt-8 pt-8 border-t border-gray-700" ref={startJourneyRef}>
                   {!hasGoal && (
                     <button
                       onClick={handleStartJourney}
@@ -556,3 +614,4 @@ const RoadmapPage = () => {
 };
 
 export default RoadmapPage;
+

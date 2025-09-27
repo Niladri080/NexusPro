@@ -25,6 +25,8 @@ import {
   ChevronLeft,
   Loader2,
   Star,
+  Search,
+  FileX,
 } from "lucide-react";
 import Footer from "../Components/Footer";
 import PostHeader from "../Components/PostHeader";
@@ -34,14 +36,11 @@ import RiseLoaderWrapper from "../Components/RiseLoader";
 import { useUser } from "@clerk/clerk-react";
 import Cookies from 'js-cookie'
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
-// Loading Component
 const LoadingSpinner = ({ size = "w-6 h-6" }) => (
   <Loader2 className={`${size} animate-spin text-blue-400`} />
 );
 
-// Section Loading Component
 const SectionLoader = ({ title, icon: Icon }) => (
   <div className="bg-[#1c1c1c] p-8 rounded-2xl border border-gray-700/50">
     <h4 className="font-semibold text-white text-lg mb-4 flex items-center">
@@ -55,7 +54,86 @@ const SectionLoader = ({ title, icon: Icon }) => (
   </div>
 );
 
-// Sparkle component matching the landing page theme
+// Empty State Component for Jobs
+const EmptyJobsState = () => (
+  <div className="col-span-2 bg-[#1c1c1c] p-12 rounded-2xl border border-gray-700/50 text-center">
+    <div className="w-20 h-20 mx-auto mb-6 bg-blue-500/10 rounded-full flex items-center justify-center">
+      <Search className="w-10 h-10 text-blue-400" />
+    </div>
+    <h4 className="text-xl font-semibold text-white mb-3">No Jobs Found</h4>
+    <p className="text-gray-400 mb-6 max-w-md mx-auto">
+      We couldn't find any job recommendations at the moment. Try updating your profile or location to get better matches.
+    </p>
+    <button
+      onClick={() =>{
+        navigate("/jobs")
+      } }
+      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300"
+    >
+      Update Job Profile
+    </button>
+  </div>
+);
+const EmptyResourcesState = () => (
+  <div className="bg-[#1c1c1c] p-8 rounded-2xl border border-gray-700/50 text-center">
+    <div className="w-16 h-16 mx-auto mb-4 bg-blue-500/10 rounded-full flex items-center justify-center">
+      <FileX className="w-8 h-8 text-blue-400" />
+    </div>
+    <h4 className="text-lg font-semibold text-white mb-2">No Resources Available</h4>
+    <p className="text-gray-400 mb-4 text-sm">
+      Learning resources will appear here once you set up your career goals.
+    </p>
+    <button
+      onClick={() => window.location.href = "/generate-roadmap"}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300"
+    >
+      Set Goals
+    </button>
+  </div>
+);
+
+// Job Loading Component
+const JobLoadingCard = () => (
+  <div className="bg-[#1c1c1c] p-6 rounded-2xl border border-gray-700/50">
+    <div className="animate-pulse">
+      <div className="flex items-start space-x-4 mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-gray-700"></div>
+        <div className="flex-1">
+          <div className="h-5 bg-gray-700 rounded mb-2"></div>
+          <div className="h-4 bg-gray-800 rounded mb-2 w-3/4"></div>
+          <div className="h-3 bg-gray-800 rounded w-1/2"></div>
+        </div>
+      </div>
+      <div className="h-4 bg-gray-800 rounded mb-4"></div>
+      <div className="flex space-x-2 mb-4">
+        <div className="h-6 bg-gray-800 rounded w-16"></div>
+        <div className="h-6 bg-gray-800 rounded w-20"></div>
+        <div className="h-6 bg-gray-800 rounded w-14"></div>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="h-8 bg-gray-800 rounded w-16"></div>
+        <div className="h-10 bg-gray-700 rounded w-24"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Resource Loading Component
+const ResourceLoadingCard = () => (
+  <div className="bg-[#1c1c1c] p-4 rounded-xl border border-gray-700/50">
+    <div className="animate-pulse">
+      <div className="flex items-center space-x-3 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-gray-700"></div>
+        <div className="flex-1">
+          <div className="h-4 bg-gray-700 rounded mb-1"></div>
+          <div className="h-3 bg-gray-800 rounded w-2/3"></div>
+        </div>
+        <div className="w-4 h-4 bg-gray-800 rounded"></div>
+      </div>
+    </div>
+  </div>
+);
+
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
@@ -78,7 +156,6 @@ const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   );
 };
 
-// Modern Job Card Component
 const ModernJobCard = ({ job }) => (
   <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 group backdrop-blur-sm relative overflow-hidden">
     <div className="absolute top-4 right-4 z-10">
@@ -94,9 +171,7 @@ const ModernJobCard = ({ job }) => (
         {job.matchScore}% match
       </div>
     </div>
-
     <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
     <div className="relative z-10">
       <div className="flex items-start space-x-4 mb-4">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center group-hover:from-blue-500/30 group-hover:to-blue-600/30 transition-all duration-300">
@@ -119,11 +194,9 @@ const ModernJobCard = ({ job }) => (
           </div>
         </div>
       </div>
-
       <p className="text-gray-400 text-sm mb-6 leading-relaxed line-clamp-2">
         {job.description}
       </p>
-
       {job.skills && (
         <div className="flex flex-wrap gap-2 mb-6">
           {job.skills.slice(0, 3).map((skill, index) => (
@@ -141,7 +214,6 @@ const ModernJobCard = ({ job }) => (
           )}
         </div>
       )}
-
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <button className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all duration-300">
@@ -158,7 +230,6 @@ const ModernJobCard = ({ job }) => (
   </div>
 );
 
-// Learning Resource Card
 const ResourceCard = ({ resource }) => (
   <div className="bg-[#1c1c1c] p-4 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300 group cursor-pointer">
     <div className="flex items-center space-x-3 mb-3">
@@ -202,22 +273,22 @@ const ModernCarousel = ({ items, title, icon: Icon, loading = false }) => {
     }, 4000);
     return () => clearInterval(interval);
   }, [items.length, isAutoPlaying, loading]);
-
+  
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % items.length);
     setIsAutoPlaying(false);
   };
-
+  
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
     setIsAutoPlaying(false);
   };
-
+  
   const goToSlide = (index) => {
     setCurrentIndex(index);
     setIsAutoPlaying(false);
   };
-
+  
   if (loading) {
     return (
       <div className="relative group mb-16">
@@ -236,7 +307,7 @@ const ModernCarousel = ({ items, title, icon: Icon, loading = false }) => {
       </div>
     );
   }
-
+  
   if (!items || items.length === 0) {
     return (
       <div className="relative group mb-16">
@@ -252,7 +323,7 @@ const ModernCarousel = ({ items, title, icon: Icon, loading = false }) => {
       </div>
     );
   }
-
+  
   return (
     <div className="relative group mb-16">
       <div className="flex items-center justify-between mb-8">
@@ -290,18 +361,15 @@ const ModernCarousel = ({ items, title, icon: Icon, loading = false }) => {
           </div>
         </div>
       </div>
-
       <div className="relative overflow-hidden rounded-2xl">
         <div
           className="flex transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
           {items.map((item, index) => (
             <div key={index} className="w-full flex-shrink-0">
               <div className="bg-gradient-to-br from-blue-900/30 to-blue-900/30 p-10 rounded-2xl border border-blue-500/40 backdrop-blur-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-blue-500/10 rounded-full blur-2xl" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-blue-500/10 rounded-full blur-xl" />
-
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-blue-500/10 rounded-full blur-xl"/>
                 <div className="relative z-10">
                   <div className="flex items-center space-x-6 mb-8">
                     <div>
@@ -354,7 +422,6 @@ const ModernCarousel = ({ items, title, icon: Icon, loading = false }) => {
   );
 };
 
-// News Item Component
 const NewsItem = ({ news }) => (
   <div className="flex items-start space-x-3 p-3 hover:bg-gray-800/50 rounded-lg transition-colors cursor-pointer group">
     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
@@ -375,8 +442,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const hasGoal = Cookies.get("hasGoal") === "true";
   const role = Cookies.get("goal") || "";
-
-  // State for data
   const [aiTip, setaiTip] = useState("Stay curious and keep learning!");
   const [aiSuggestions, setaiSuggestions] = useState([]);
   const [currentAffairs, setcurrentAffairs] = useState([]);
@@ -385,39 +450,27 @@ const Dashboard = () => {
   const [resumeScore, setresumeScore] = useState(0);
   const [hasResume, sethasResume] = useState(false);
   const [learningResources,setlearningResources]=useState([]);
-  // Loading states
   const [loadingRoadmap, setLoadingRoadmap] = useState(false);
   const [loadingResume, setLoadingResume] = useState(false);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [loadingNews, setLoadingNews] = useState(false);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [loadingResources, setLoadingResources] = useState(false);
   const [jobRecommendations,setjobRecommendations]=useState([]);
-  // Helper function to safely parse JSON from API responses
+
   const parseApiResponse = (rawMessage) => {
     try {
-      // Remove markdown code blocks
       let cleanedString = rawMessage.replace(/```json\n?|```\n?/g, "").trim();
-      
-      // Fix common JSON formatting issues
-      // Fix missing closing braces before commas (common AI generation error)
       cleanedString = cleanedString.replace(/"\s*\n\s*,/g, '"},');
-      
-      // Remove any trailing commas before closing brackets/braces
       cleanedString = cleanedString.replace(/,(\s*[}\]])/g, '$1');
-      
-      // Parse the JSON
       return JSON.parse(cleanedString);
     } catch (error) {
       console.error("JSON parsing failed:", error);
       console.log("Attempted to parse:", rawMessage);
-      
-      // Try one more aggressive fix for malformed objects
       try {
         let fixedString = rawMessage.replace(/```json\n?|```\n?/g, "").trim();
-        
-        // More aggressive fix: look for pattern like `"time": "value"\n  ,` and fix it
         fixedString = fixedString.replace(/"([^"]+)"\s*\n\s*,/g, '"$1"},');
         fixedString = fixedString.replace(/,(\s*[}\]])/g, '$1');
-        
         return JSON.parse(fixedString);
       } catch (secondError) {
         console.error("Second parsing attempt also failed:", secondError);
@@ -507,7 +560,9 @@ const Dashboard = () => {
         setLoadingResume(false);
       });
   }, [user, location.pathname]);
+
   useEffect(()=>{
+    setLoadingResources(true);
     axios.post("http://localhost:4000/api/home/dash-resource",{
       userId:user.id
     })
@@ -515,11 +570,17 @@ const Dashboard = () => {
       setlearningResources(res.data.resource);
     })
     .catch(err=>{
-      toast.error("Error while loading resources");
+      console.log("Error while loading resources");
+      setlearningResources([]);
     })
+    .finally(() => {
+      setLoadingResources(false);
+    });
   },[user, location.pathname])
-   useEffect(() => {
+
+  useEffect(() => {
     if (!user?.id) return;
+    setLoadingJobs(true);
     axios.post("http://localhost:4000/api/home/fetch-jobs", { userId: user.id })
       .then((res) => {
         console.log(res.data.jobs[0].job);
@@ -527,8 +588,13 @@ const Dashboard = () => {
       })
       .catch((err) => {
         console.log(err);
+        setjobRecommendations([]);
       })
+      .finally(() => {
+        setLoadingJobs(false);
+      });
   }, [user,location.pathname]);
+
   return (
     <>
       <div className="bg-[#0a0a0c] text-white font-sans overflow-hidden relative min-h-screen">
@@ -712,12 +778,22 @@ const Dashboard = () => {
                 <Briefcase className="w-6 h-6 mr-3 text-blue-400" />
                 Job Recommendations
               </h3>
-              <div className="grid md:grid-cols-2 gap-8">
-                {jobRecommendations.length>0 && jobRecommendations.slice(0,4).map((job, idx) => (
-                  <ModernJobCard key={idx} job={job} />
-                ))}
-              {jobRecommendations.length==0 && <p className='text-blue-500 mt-10'>No Recommendations Found</p>  }
-              </div>
+              {loadingJobs ? (
+                <div className="grid md:grid-cols-2 gap-8">
+                  <JobLoadingCard />
+                  <JobLoadingCard />
+                  <JobLoadingCard />
+                  <JobLoadingCard />
+                </div>
+              ) : jobRecommendations.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-8">
+                  {jobRecommendations.slice(0, 4).map((job, idx) => (
+                    <ModernJobCard key={idx} job={job} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyJobsState />
+              )}
             </section>
 
             {/* Learning Resources */}
@@ -726,16 +802,30 @@ const Dashboard = () => {
                 <BookOpen className="w-6 h-6 mr-3 text-blue-400" />
                 Learning Resources
               </h3>
-              <div className="space-y-4">
-                {learningResources.map((resource, idx) => (
-                  <ResourceCard key={idx} resource={resource} />
-                ))}
-              <span onClick={()=>{
-                navigate("/resources")
-              }} className='text-blue-500 mt-10 underline cursor-pointer'>Learn More ↗</span>
-              </div>
+              {loadingResources ? (
+                <div className="space-y-4">
+                  <ResourceLoadingCard />
+                  <ResourceLoadingCard />
+                  <ResourceLoadingCard />
+                  <ResourceLoadingCard />
+                  <ResourceLoadingCard />
+                  <ResourceLoadingCard />
+                </div>
+              ) : learningResources.length > 0 ? (
+                <div className="space-y-4">
+                  {learningResources.map((resource, idx) => (
+                    <ResourceCard key={idx} resource={resource} />
+                  ))}
+                  <span onClick={()=>{
+                    navigate("/resources")
+                  }} className='text-blue-500 mt-10 underline cursor-pointer'>Learn More ↗</span>
+                </div>
+              ) : (
+                <EmptyResourcesState />
+              )}
             </section>
           </div>
+          
           {/* Current Affairs / News */}
           <section className="mb-20">
             <h3 className="text-2xl font-bold mb-6 flex items-center">

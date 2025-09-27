@@ -256,7 +256,7 @@ const ResumePage = () => {
         userId: user.id,
       })
       .then((res) => {
-        toast.success("Resume records deleted successfully");
+        toast.success("Resume records reset successfully");
       })
       .catch((err) => {
         toast.error("Something unexpected happened. Try again later");

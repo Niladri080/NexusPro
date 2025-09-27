@@ -239,12 +239,26 @@ const JobPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+  // Ref for job results section
+  const jobResultsRef = useRef(null);
+
   const handleLike = (jobId) => {
     console.log(`Liked job ${jobId}`);
   };
 
   const handleShare = (jobId) => {
     console.log(`Shared job ${jobId}`);
+  };
+
+  // Smooth scroll function
+  const scrollToJobResults = () => {
+    if (jobResultsRef.current) {
+      jobResultsRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
   };
 
   // Initial job fetch
@@ -256,6 +270,10 @@ const JobPage = () => {
         if (res.data.success){
           console.log(res.data.jobs[0].job);
           setJobs(res.data.jobs[0].job);
+          // Scroll to job results after initial load with a delay
+          setTimeout(() => {
+            scrollToJobResults();
+          }, 500);
         }
       })
       .catch((err) => {
@@ -282,6 +300,10 @@ const JobPage = () => {
     })
       .then((res) => {
         setJobs(res.data.response);
+        // Scroll to job results after search with a delay
+        setTimeout(() => {
+          scrollToJobResults();
+        }, 300);
       })
       .catch((err) => {
         console.log(err);
@@ -570,8 +592,8 @@ const JobPage = () => {
           </div>
         </section>
 
-        {/* Job Results Section */}
-        <section className="container mx-auto px-6 lg:px-8 pb-16 relative z-10">
+        {/* Job Results Section - Added ref for scroll target */}
+        <section ref={jobResultsRef} className="container mx-auto px-6 lg:px-8 pb-16 relative z-10 scroll-mt-8">
           {isLoading ? (
             <LoadingSpinner message="Finding the perfect jobs for you..." />
           ) : (
@@ -587,7 +609,7 @@ const JobPage = () => {
                 </div>
               ) : (
                 <>
-                  <div className="mb-4">
+                  <div className="mb-4 animate-fade-in-up">
                     <p className="text-gray-400">
                       Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
                       {searchTerm && ` matching "${searchTerm}"`}

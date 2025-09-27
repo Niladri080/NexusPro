@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Star, Target, Users, Award, Lightbulb, Heart, Zap, Globe, Search, Twitter, Linkedin, Facebook, ArrowRight, CheckCircle } from 'lucide-react';
 import Header from '../Components/Header';
 import Footer from '../Components/Footer';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import PostHeader from '../Components/PostHeader';
 
-// Sparkle component matching the original theme
 const Sparkle = ({ delay = 0, size = 'w-1 h-1' }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   
@@ -14,8 +15,11 @@ const Sparkle = ({ delay = 0, size = 'w-1 h-1' }) => {
     });
   }, []);
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth", 
+      });
+    }, []);
   return (
     <div
       className={`absolute ${size} bg-white rounded-full opacity-0 animate-sparkle pointer-events-none`}
@@ -80,20 +84,7 @@ const ValueCard = ({ icon: Icon, title, description }) => (
   </div>
 );
 
-// Stats Component
-const StatCard = ({ number, label, icon: Icon }) => (
-  <div className="text-center group">
-    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 flex items-center justify-center group-hover:from-blue-500/30 group-hover:to-purple-600/30 transition-all duration-300">
-      <Icon className="w-8 h-8 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
-    </div>
-    <div className="text-3xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">
-      {number}
-    </div>
-    <div className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
-      {label}
-    </div>
-  </div>
-);
+
 
 const AboutUsPage = () => {
   const teamMembers = [
@@ -146,9 +137,8 @@ const AboutUsPage = () => {
       ))}
 
       <div className="relative z-10 container mx-auto px-6 lg:px-8 py-6">
-        {/* Header Navigation */}
-        <Header/>
-        {/* Hero Section */}
+        <SignedIn><PostHeader/></SignedIn>
+        <SignedOut><Header/></SignedOut>
         <section className="text-center py-20 lg:py-32 relative mb-20">
           {/* Orbital Glow Effect */}
           <div className="absolute inset-0 flex items-center justify-center -z-10">

@@ -23,7 +23,7 @@ await connectDB();
 app.use(express.urlencoded({extended:true}))
 app.use("/",PreLoginRouter);
 app.use("/api/home",PostLoginRouter);
-const PORT=4000
+const PORT=process.env.PORT
 app.listen(PORT,()=>{
   console.log(`Server is running on http://localhost:${PORT}`)
 })

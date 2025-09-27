@@ -21,6 +21,8 @@ import Footer from "../Components/Footer";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Loader from "../Components/Loader";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import PostHeader from "../Components/PostHeader";
 // Sparkle component matching the original theme
 const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -31,7 +33,12 @@ const Sparkle = ({ delay = 0, size = "w-1 h-1" }) => {
       y: Math.random() * 100,
     });
   }, []);
-
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", 
+    });
+  }, []);
   return (
     <div
       className={`absolute ${size} bg-white rounded-full opacity-0 animate-sparkle pointer-events-none`}
@@ -289,11 +296,9 @@ const ContactUsPage = () => {
       ))}
 
       <div className="relative z-10 container mx-auto px-6 lg:px-8 py-6">
-        {/* Header Navigation */}
-        <Header />
-        {/* Hero Section */}
+        <SignedIn><PostHeader/></SignedIn>
+        <SignedOut><Header/></SignedOut>
         <section className="text-center py-20 lg:py-32 relative mb-20">
-          {/* Orbital Glow Effect */}
           <div className="absolute inset-0 flex items-center justify-center -z-10">
             <div className="w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
             <div className="absolute w-[400px] h-[400px] border-2 border-blue-500/20 rounded-full animate-spin-slow"></div>

@@ -2,11 +2,8 @@ import { useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import {
-  RedirectToSignIn,
   SignIn,
   SignUp,
-  SignedIn,
-  SignedOut,
   useUser,
 } from "@clerk/clerk-react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
