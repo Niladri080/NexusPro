@@ -43,7 +43,7 @@ const apiClient = axios.create({
 const postAPI = {
   createPost: (postData) => {
     return new Promise((resolve, reject) => {
-      apiClient.post('/create-post', postData)
+      apiClient.post('/api/home/create-post', postData)
         .then(response => {
           console.log('Post created successfully:', response.data);
           resolve(response.data);
@@ -57,7 +57,7 @@ const postAPI = {
 
   fetchPosts: () => {
     return new Promise((resolve, reject) => {
-      apiClient.get('/fetch-posts')
+      apiClient.get('/api/home/fetch-posts')
         .then(response => {
           console.log('Posts fetched successfully:', response.data);
           resolve(response.data.posts || []);
@@ -72,7 +72,7 @@ const postAPI = {
   // Enhanced like functionality
   toggleLike: (postId, userId, userName) => {
     return new Promise((resolve, reject) => {
-      apiClient.post(`/like-post/${postId}`, { userId, userName })
+      apiClient.post(`/api/home/like-post/${postId}`, { userId, userName })
         .then(response => {
           console.log('Like toggled successfully:', response.data);
           resolve(response.data);
@@ -87,7 +87,7 @@ const postAPI = {
   // Enhanced comment functionality
   addComment: (postId, commentData) => {
     return new Promise((resolve, reject) => {
-      apiClient.post(`/add-comment/${postId}`, commentData)
+      apiClient.post(`/api/home/add-comment/${postId}`, commentData)
         .then(response => {
           console.log('Comment added successfully:', response.data);
           resolve(response.data);
@@ -102,7 +102,7 @@ const postAPI = {
   // Delete post functionality
   deletePost: (postId, userId) => {
     return new Promise((resolve, reject) => {
-      apiClient.delete(`/delete-post/${postId}`, {
+      apiClient.delete(`/api/home/delete-post/${postId}`, {
         data: { userId }
       })
         .then(response => {
@@ -119,7 +119,7 @@ const postAPI = {
   // Get detailed post info
   getPostDetails: (postId, userId) => {
     return new Promise((resolve, reject) => {
-      apiClient.get(`/post-details/${postId}?userId=${userId}`)
+      apiClient.get(`/api/home/post-details/${postId}?userId=${userId}`)
         .then(response => {
           resolve(response.data);
         })
@@ -132,7 +132,7 @@ const postAPI = {
   // Update post functionality
   updatePost: (postId, updateData) => {
     return new Promise((resolve, reject) => {
-      apiClient.put(`/update-post/${postId}`, updateData)
+      apiClient.put(`/api/home/update-post/${postId}`, updateData)
         .then(response => {
           resolve(response.data);
         })
