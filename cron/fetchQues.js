@@ -40,7 +40,6 @@ const fetchAndSaveQuestion = async () => {
 }
 \`\`\`
 `;
-
     const result = await model.generateContent(prompt);
     const cleaned = result.response.candidates[0].content.parts[0].text
       .replace(/```json|```/g, "")
