@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Ques from "./models/Ques.js"; // adjust path as neede
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Ques } from "./Models/QuesModel";
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fetchAndSaveQuestion = async () => {
