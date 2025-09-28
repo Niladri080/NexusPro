@@ -11,14 +11,11 @@ const app=express()
 app.use(express.json())
 app.use(cookieParser())
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-app.use(
-  cors({
-    origin:"https://nexus-pro-three.vercel.app",
-    credentials:true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 await connectDB();
 app.use(express.urlencoded({extended:true}))
 app.use("/",PreLoginRouter);
