@@ -52,7 +52,7 @@ const fetchAndSaveQuestion = async () => {
     console.error("❌ Cron job failed:", err.message);
   } finally {
     await mongoose.disconnect();
-    process.exit(0);
+    // process.exit(0);
   }
 };
 

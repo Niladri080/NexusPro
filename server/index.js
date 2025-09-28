@@ -1,29 +1,29 @@
-import express from 'express'
-import cors from 'cors'
-import cookieParser from 'cookie-parser'
-import PreLoginRouter from './Router/PreLoginRouter.js'
-import PostLoginRouter from './Router/PostLoginRouter.js'
-import dotenv from "dotenv"
-import { connectDB } from './Config/db.js'
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import PreLoginRouter from "./Router/PreLoginRouter.js";
+import PostLoginRouter from "./Router/PostLoginRouter.js";
+import dotenv from "dotenv";
+import { connectDB } from "./Config/db.js";
 import path from "path";
 dotenv.config();
-const app=express()
-app.use(express.json())
-app.use(cookieParser())
+const app = express();
+app.use(express.json());
+app.use(cookieParser());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(
   cors({
-    origin:"https://nexus-pro-three.vercel.app",
-    credentials:true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: "https://nexus-pro-three.vercel.app",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE","OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
-)
+);
 await connectDB();
-app.use(express.urlencoded({extended:true}))
-app.use("/",PreLoginRouter);
-app.use("/api/home",PostLoginRouter);
-const PORT=process.env.PORT
-app.listen(PORT,()=>{
-  console.log(`Server is running on http://localhost:${PORT}`)
-})
+app.use(express.urlencoded({ extended: true }));
+app.use("/", PreLoginRouter);
+app.use("/api/home", PostLoginRouter);
+const PORT = process.env.PORT;
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
