@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Ques } from "../server/Models/QuesModel";
+import { Ques } from "../server/Models/QuesModel.js";
 
 dotenv.config();
 
