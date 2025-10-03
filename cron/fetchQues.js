@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Ques } from "./Models/QuesModel.js";
-
+import { Ques } from "./QuesModel.js";
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -45,7 +44,6 @@ const fetchAndSaveQuestion = async () => {
       .replace(/```json|```/g, "")
       .trim();
     const parsed = JSON.parse(cleaned);
-
     await Ques.deleteMany({});
     const newQuestion = new Ques({
       question: parsed.question,
